@@ -20,6 +20,171 @@ from datetime import datetime
 import queue
 import webbrowser
 
+class TroubleshootingHelper:
+    """Helper class for troubleshooting common download issues"""
+    
+    @staticmethod
+    def get_error_suggestions(error_message, platform=""):
+        """Get troubleshooting suggestions based on error message"""
+        suggestions = []
+        
+        error_lower = error_message.lower()
+        
+        if "403" in error_message or "access denied" in error_lower:
+            suggestions.extend([
+                "🔒 Video may be private or region-blocked",
+                "🌍 Try using a VPN to change your location",
+                "⏰ Wait a few minutes and try again",
+                "🔄 Try a different quality setting"
+            ])
+            
+        elif "404" in error_message or "not found" in error_lower:
+            suggestions.extend([
+                "❌ Video may have been deleted",
+                "🔗 Check if the URL is correct",
+                "📱 Try getting a fresh link from the platform"
+            ])
+            
+        elif "429" in error_message or "rate limit" in error_lower:
+            suggestions.extend([
+                "⏳ Too many requests - wait 10-15 minutes",
+                "🔢 Reduce concurrent downloads",
+                "🕐 Try downloading during off-peak hours"
+            ])
+            
+        elif "age" in error_lower and "restricted" in error_lower:
+            suggestions.extend([
+                "🔞 Age-restricted content cannot be downloaded",
+                "👤 Video requires sign-in to verify age",
+                "❌ This is a platform limitation"
+            ])
+            
+        elif "private" in error_lower:
+            suggestions.extend([
+                "🔐 Video is set to private",
+                "👥 Only the uploader can access it",
+                "📧 Contact the uploader for access"
+            ])
+            
+        elif "tiktok" in platform.lower():
+            suggestions.extend([
+                "📱 TikTok has strict anti-bot measures",
+                "🔄 Try copying the URL again from mobile app",
+                "⏰ Wait a few minutes between downloads",
+                "🌐 Use different network connection"
+            ])
+            
+        elif "instagram" in platform.lower():
+            suggestions.extend([
+                "📸 Instagram blocks automated downloads",
+                "👤 Video may require login to view",
+                "🔄 Try different quality setting",
+                "📱 Use the share link from Instagram app"
+            ])
+            
+        # General suggestions
+        if not suggestions:
+            suggestions.extend([
+                "🔄 Try a different quality setting",
+                "⏰ Wait a few minutes and retry",
+                "🌐 Check your internet connection",
+                "🔗 Verify the URL is correct and accessible"
+            ])
+            
+        return suggestions[:4]  # Limit to 4 suggestions
+    
+    @staticmethod
+    def show_help_dialog(parent, error_message, platform=""):
+        """Show detailed help dialog for troubleshooting"""
+        help_window = tk.Toplevel(parent)
+        help_window.title("🛠️ Troubleshooting Help")
+        help_window.geometry("500x400")
+        help_window.resizable(True, True)
+        help_window.grab_set()
+        
+        # Center window
+        help_window.update_idletasks()
+        x = (help_window.winfo_screenwidth() // 2) - 250
+        y = (help_window.winfo_screenheight() // 2) - 200
+        help_window.geometry(f"500x400+{x}+{y}")
+        
+        # Main frame
+        main_frame = ttk.Frame(help_window, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Title
+        title_label = ttk.Label(main_frame, text="🛠️ Troubleshooting Help", 
+                               font=("Segoe UI", 14, "bold"))
+        title_label.pack(pady=(0, 15))
+        
+        # Error details
+        error_frame = ttk.LabelFrame(main_frame, text="❌ Error Details", padding="10")
+        error_frame.pack(fill=tk.X, pady=(0, 15))
+        
+        error_text = tk.Text(error_frame, height=3, wrap=tk.WORD, font=("Consolas", 9))
+        error_text.pack(fill=tk.X)
+        error_text.insert(tk.END, error_message)
+        error_text.config(state=tk.DISABLED)
+        
+        # Suggestions
+        suggestions_frame = ttk.LabelFrame(main_frame, text="💡 Suggested Solutions", padding="10")
+        suggestions_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
+        
+        suggestions = TroubleshootingHelper.get_error_suggestions(error_message, platform)
+        
+        for i, suggestion in enumerate(suggestions, 1):
+            suggestion_label = ttk.Label(suggestions_frame, text=f"{i}. {suggestion}",
+                                       font=("Segoe UI", 10), wraplength=450)
+            suggestion_label.pack(anchor=tk.W, pady=2)
+        
+        # Additional resources
+        resources_frame = ttk.LabelFrame(main_frame, text="📚 Additional Resources", padding="10")
+        resources_frame.pack(fill=tk.X, pady=(0, 15))
+        
+        resources_text = """Common solutions:
+• Check if video is publicly accessible in your browser
+• Try downloading one video at a time
+• Update yt-dlp: pip install yt-dlp --upgrade
+• Some platforms block downloads during peak hours"""
+        
+        resources_label = ttk.Label(resources_frame, text=resources_text,
+                                  font=("Segoe UI", 9), justify=tk.LEFT)
+        resources_label.pack(anchor=tk.W)
+        
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X)
+        
+        close_btn = ttk.Button(button_frame, text="✅ Close", 
+                             command=help_window.destroy)
+        close_btn.pack(side=tk.RIGHT)
+        
+        update_btn = ttk.Button(button_frame, text="🔄 Update yt-dlp", 
+                              command=lambda: TroubleshootingHelper.update_ytdlp(help_window))
+        update_btn.pack(side=tk.RIGHT, padx=(0, 10))
+        
+    @staticmethod
+    def update_ytdlp(parent_window):
+        """Update yt-dlp in background"""
+        def update_worker():
+            try:
+                import subprocess
+                import sys
+                result = subprocess.run([sys.executable, "-m", "pip", "install", "yt-dlp", "--upgrade"], 
+                                      capture_output=True, text=True, timeout=60)
+                if result.returncode == 0:
+                    parent_window.after(0, lambda: messagebox.showinfo("Success", "yt-dlp updated successfully!"))
+                else:
+                    parent_window.after(0, lambda: messagebox.showerror("Error", f"Update failed:\n{result.stderr}"))
+            except Exception as e:
+                parent_window.after(0, lambda: messagebox.showerror("Error", f"Update failed:\n{str(e)}"))
+        
+        thread = threading.Thread(target=update_worker)
+        thread.daemon = True
+        thread.start()
+        
+        messagebox.showinfo("Updating", "Updating yt-dlp in background...\nThis may take a minute.")
+
 # Try to import required libraries
 try:
     import yt_dlp
@@ -237,6 +402,11 @@ class VideoListFrame(ttk.Frame):
                               command=lambda: self.retry_video(video_item.id))
         retry_btn.pack(side=tk.LEFT, padx=2)
         
+        # Help button for errors
+        help_btn = ttk.Button(controls_frame, text="❓", width=3,
+                             command=lambda: self.show_help(video_item.id))
+        help_btn.pack(side=tk.LEFT, padx=2)
+        
         # Middle row: Progress bar
         progress_frame = ttk.Frame(inner_frame)
         progress_frame.pack(fill=tk.X, pady=(0, 10))
@@ -268,6 +438,17 @@ class VideoListFrame(ttk.Frame):
                               foreground=ModernStyle.COLORS['text_secondary'])
         meta_label.pack(side=tk.RIGHT)
         
+        # Error message row (initially hidden)
+        error_frame = ttk.Frame(inner_frame)
+        if video_item.status == "error" and video_item.error_message:
+            error_frame.pack(fill=tk.X, pady=(5, 0))
+            error_icon = ttk.Label(error_frame, text="⚠️", font=("Segoe UI", 10))
+            error_icon.pack(side=tk.LEFT, padx=(0, 5))
+            error_label = ttk.Label(error_frame, text=video_item.error_message,
+                                  font=ModernStyle.FONTS['small'],
+                                  foreground="red", wraplength=500)
+            error_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
         # Store references for updates
         widget_data = {
             'container': container,
@@ -280,6 +461,8 @@ class VideoListFrame(ttk.Frame):
             'pause_btn': pause_btn,
             'cancel_btn': cancel_btn,
             'retry_btn': retry_btn,
+            'help_btn': help_btn,
+            'error_frame': error_frame,
             'video_item': video_item
         }
         
@@ -307,20 +490,50 @@ class VideoListFrame(ttk.Frame):
         if 'status' in kwargs:
             widget['status_label'].config(text=f"Status: {kwargs['status']}")
             
+            # Show/hide error message
+            if kwargs['status'] == "error" and hasattr(video_item, 'error_message') and video_item.error_message:
+                # Show error message
+                for child in widget['error_frame'].winfo_children():
+                    child.destroy()
+                    
+                error_icon = ttk.Label(widget['error_frame'], text="⚠️", font=("Segoe UI", 10))
+                error_icon.pack(side=tk.LEFT, padx=(0, 5))
+                error_label = ttk.Label(widget['error_frame'], text=video_item.error_message,
+                                      font=ModernStyle.FONTS['small'],
+                                      foreground="red", wraplength=500)
+                error_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
+                widget['error_frame'].pack(fill=tk.X, pady=(5, 0))
+            else:
+                # Hide error message
+                widget['error_frame'].pack_forget()
+            
             # Update button states based on status
             status = kwargs['status']
             if status == "downloading":
                 widget['pause_btn'].config(state="normal", text="⏸️")
                 widget['cancel_btn'].config(state="normal")
                 widget['retry_btn'].config(state="disabled")
+                widget['help_btn'].config(state="disabled")
             elif status == "paused":
                 widget['pause_btn'].config(state="normal", text="▶️")
                 widget['cancel_btn'].config(state="normal")
                 widget['retry_btn'].config(state="normal")
-            elif status in ["completed", "error", "cancelled"]:
+                widget['help_btn'].config(state="disabled")
+            elif status == "error":
                 widget['pause_btn'].config(state="disabled")
                 widget['cancel_btn'].config(state="disabled") 
-                widget['retry_btn'].config(state="normal" if status != "completed" else "disabled")
+                widget['retry_btn'].config(state="normal")
+                widget['help_btn'].config(state="normal")
+            elif status in ["completed", "cancelled"]:
+                widget['pause_btn'].config(state="disabled")
+                widget['cancel_btn'].config(state="disabled") 
+                widget['retry_btn'].config(state="disabled" if status == "completed" else "normal")
+                widget['help_btn'].config(state="disabled")
+            else:  # pending, analyzing
+                widget['pause_btn'].config(state="disabled")
+                widget['cancel_btn'].config(state="normal")
+                widget['retry_btn'].config(state="disabled")
+                widget['help_btn'].config(state="disabled")
                 
         # Update progress text
         if 'speed' in kwargs and 'eta' in kwargs:
@@ -358,6 +571,24 @@ class VideoListFrame(ttk.Frame):
     def retry_video(self, video_id):
         """Retry failed video download"""
         self.app.retry_video_download(video_id)
+        
+    def show_help(self, video_id):
+        """Show help for video error"""
+        if video_id in self.video_widgets:
+            video_item = self.video_widgets[video_id]['video_item']
+            if video_item.status == "error" and video_item.error_message:
+                # Detect platform from URL
+                platform = ""
+                if 'tiktok.com' in video_item.url:
+                    platform = "tiktok"
+                elif 'instagram.com' in video_item.url:
+                    platform = "instagram"
+                elif 'facebook.com' in video_item.url or 'fb.watch' in video_item.url:
+                    platform = "facebook"
+                elif 'youtube.com' in video_item.url or 'youtu.be' in video_item.url:
+                    platform = "youtube"
+                
+                TroubleshootingHelper.show_help_dialog(self.app.root, video_item.error_message, platform)
 
 class ModernVideoDownloader:
     """Modern video downloader with advanced UI"""
@@ -368,6 +599,12 @@ class ModernVideoDownloader:
         self.download_threads = {}  # video_id -> thread
         self.is_dark_theme = False
         self.download_path = ""
+        self.batch_summary = {
+            'total': 0,
+            'completed': 0,
+            'failed': 0,
+            'errors': []
+        }
         
         self.setup_ui()
         self.setup_download_folder()
@@ -689,28 +926,71 @@ Powered by yt-dlp"""
             video_item.status = "analyzing"
             self.video_list.update_video(video_item.id, status="analyzing")
             
+            # Special handling for TikTok
             ydl_opts = {
                 'quiet': True,
                 'no_warnings': True,
+                'extract_flat': False,
             }
             
+            # Platform-specific configurations
+            if 'tiktok.com' in video_item.url:
+                ydl_opts.update({
+                    'http_headers': {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                        'Accept-Language': 'en-us,en;q=0.5',
+                        'Accept-Encoding': 'gzip,deflate',
+                        'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
+                        'Keep-Alive': '300',
+                        'Connection': 'keep-alive',
+                    },
+                    'cookiefile': None,
+                    'cookiesfrombrowser': None,
+                })
+            
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(video_item.url, download=False)
-                
-                video_item.title = info.get('title', 'Unknown')[:80]
-                video_item.duration = info.get('duration', 0)
-                video_item.uploader = info.get('uploader', 'Unknown')
-                video_item.thumbnail_url = info.get('thumbnail', '')
-                video_item.status = "pending"
-                
-                # Update UI
-                self.video_list.update_video(video_item.id, 
-                                           title=video_item.title,
-                                           status="pending")
-                
+                try:
+                    info = ydl.extract_info(video_item.url, download=False)
+                    
+                    video_item.title = info.get('title', 'Unknown')[:80]
+                    video_item.duration = info.get('duration', 0)
+                    video_item.uploader = info.get('uploader', 'Unknown')
+                    video_item.thumbnail_url = info.get('thumbnail', '')
+                    video_item.status = "pending"
+                    
+                    # Update UI
+                    self.video_list.update_video(video_item.id, 
+                                               title=video_item.title,
+                                               status="pending")
+                                               
+                except yt_dlp.DownloadError as e:
+                    error_msg = str(e)
+                    video_item.status = "error"
+                    
+                    # Provide specific error messages for common issues
+                    if "Private video" in error_msg:
+                        video_item.error_message = "Video is private or unavailable"
+                    elif "Video unavailable" in error_msg:
+                        video_item.error_message = "Video not found or region blocked"
+                    elif "Sign in to confirm your age" in error_msg:
+                        video_item.error_message = "Age-restricted video"
+                    elif "This video is not available" in error_msg:
+                        video_item.error_message = "Video removed or restricted"
+                    elif "tiktok" in video_item.url.lower() and "403" in error_msg:
+                        video_item.error_message = "TikTok access blocked - try different URL format"
+                    else:
+                        video_item.error_message = f"Analysis failed: {error_msg[:100]}"
+                    
+                    self.video_list.update_video(video_item.id, status="error")
+                    
+        except ImportError:
+            video_item.status = "error"
+            video_item.error_message = "yt-dlp not installed"
+            self.video_list.update_video(video_item.id, status="error")
         except Exception as e:
             video_item.status = "error"
-            video_item.error_message = str(e)
+            video_item.error_message = f"Unexpected error: {str(e)[:100]}"
             self.video_list.update_video(video_item.id, status="error")
             
     def start_batch_download(self):
@@ -721,10 +1001,24 @@ Powered by yt-dlp"""
             messagebox.showinfo("Info", "No videos to download!")
             return
             
+        # Reset batch summary
+        self.batch_summary = {
+            'total': len(pending_videos),
+            'completed': 0,
+            'failed': 0,
+            'errors': [],
+            'start_time': datetime.now()
+        }
+            
         max_concurrent = int(self.concurrent_var.get())
         
         for i, video in enumerate(pending_videos[:max_concurrent]):
             self.start_video_download(video.id)
+            
+        # Start monitoring thread for batch completion
+        monitor_thread = threading.Thread(target=self.monitor_batch_completion)
+        monitor_thread.daemon = True
+        monitor_thread.start()
             
     def start_video_download(self, video_id):
         """Start downloading a specific video"""
@@ -772,20 +1066,90 @@ Powered by yt-dlp"""
                                                status="completed",
                                                progress=100)
                     
+                    # Update batch summary
+                    self.batch_summary['completed'] += 1
+                    
+            # Enhanced yt-dlp options
             ydl_opts = {
                 'outtmpl': os.path.join(self.download_path, '%(title)s.%(ext)s'),
                 'progress_hooks': [progress_hook],
                 'format': self.get_format_selector(video_item.quality),
                 'noplaylist': True,
+                'extract_flat': False,
+                'writeinfojson': False,
+                'writethumbnail': False,
+                'ignoreerrors': False,
+                'retries': 3,
+                'fragment_retries': 3,
+                'timeout': 30,
             }
+            
+            # Platform-specific configurations
+            if 'tiktok.com' in video_item.url:
+                ydl_opts.update({
+                    'format': 'best[ext=mp4]/best',
+                    'http_headers': {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'Referer': 'https://www.tiktok.com/',
+                    },
+                    'cookiefile': None,
+                })
+            elif 'instagram.com' in video_item.url:
+                ydl_opts.update({
+                    'format': 'best[ext=mp4]/best',
+                })
+            elif 'facebook.com' in video_item.url or 'fb.watch' in video_item.url:
+                ydl_opts.update({
+                    'format': 'best[ext=mp4]/best',
+                })
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([video_item.url])
                 
+        except yt_dlp.DownloadError as e:
+            error_msg = str(e)
+            video_item.status = "error"
+            
+            # Categorize errors for better user understanding
+            if "HTTP Error 403" in error_msg:
+                video_item.error_message = "Access denied - Video may be private or region-blocked"
+            elif "HTTP Error 404" in error_msg:
+                video_item.error_message = "Video not found - May have been deleted"
+            elif "HTTP Error 429" in error_msg:
+                video_item.error_message = "Rate limited - Too many requests, try again later"
+            elif "Sign in to confirm your age" in error_msg:
+                video_item.error_message = "Age-restricted content - Cannot download"
+            elif "Private video" in error_msg:
+                video_item.error_message = "Private video - Access denied"
+            elif "Video unavailable" in error_msg:
+                video_item.error_message = "Video unavailable - May be deleted or restricted"
+            elif "tiktok" in video_item.url.lower():
+                video_item.error_message = "TikTok download failed - Platform restrictions"
+            else:
+                video_item.error_message = f"Download failed: {error_msg[:100]}"
+            
+            self.video_list.update_video(video_item.id, status="error")
+            
+            # Update batch summary
+            self.batch_summary['failed'] += 1
+            self.batch_summary['errors'].append({
+                'title': video_item.title,
+                'url': video_item.url[:50] + "...",
+                'error': video_item.error_message
+            })
+            
         except Exception as e:
             video_item.status = "error"
-            video_item.error_message = str(e)
+            video_item.error_message = f"Unexpected error: {str(e)[:100]}"
             self.video_list.update_video(video_item.id, status="error")
+            
+            # Update batch summary
+            self.batch_summary['failed'] += 1
+            self.batch_summary['errors'].append({
+                'title': video_item.title,
+                'url': video_item.url[:50] + "...",
+                'error': video_item.error_message
+            })
             
     def get_format_selector(self, quality):
         """Get format selector for yt-dlp"""
@@ -869,6 +1233,161 @@ Powered by yt-dlp
 Created with ❤️ by CZ Team"""
 
         messagebox.showinfo("About CZ Video Downloader", about_text)
+        
+    def monitor_batch_completion(self):
+        """Monitor batch download completion and show summary"""
+        while True:
+            time.sleep(2)  # Check every 2 seconds
+            
+            # Check if all downloads are completed
+            active_statuses = ['analyzing', 'downloading', 'pending']
+            active_videos = [v for v in self.video_queue.values() 
+                           if v.status in active_statuses]
+            
+            if not active_videos and self.batch_summary['total'] > 0:
+                # All downloads completed, show summary
+                self.root.after(0, self.show_batch_summary)
+                break
+                
+    def show_batch_summary(self):
+        """Show batch download completion summary"""
+        if self.batch_summary['total'] == 0:
+            return
+            
+        # Calculate statistics
+        total = self.batch_summary['total']
+        completed = self.batch_summary['completed']
+        failed = self.batch_summary['failed']
+        success_rate = (completed / total * 100) if total > 0 else 0
+        
+        # Calculate duration
+        if 'start_time' in self.batch_summary:
+            duration = datetime.now() - self.batch_summary['start_time']
+            duration_str = str(duration).split('.')[0]  # Remove microseconds
+        else:
+            duration_str = "Unknown"
+        
+        # Create summary window
+        summary_window = tk.Toplevel(self.root)
+        summary_window.title("Batch Download Summary")
+        summary_window.geometry("600x500")
+        summary_window.resizable(True, True)
+        summary_window.grab_set()
+        
+        # Center window
+        summary_window.update_idletasks()
+        x = (summary_window.winfo_screenwidth() // 2) - 300
+        y = (summary_window.winfo_screenheight() // 2) - 250
+        summary_window.geometry(f"600x500+{x}+{y}")
+        
+        # Main frame
+        main_frame = ttk.Frame(summary_window, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Title
+        title_label = ttk.Label(main_frame, text="📊 Batch Download Complete!", 
+                               font=("Segoe UI", 16, "bold"))
+        title_label.pack(pady=(0, 20))
+        
+        # Statistics frame
+        stats_frame = ttk.LabelFrame(main_frame, text="📈 Statistics", padding="15")
+        stats_frame.pack(fill=tk.X, pady=(0, 15))
+        
+        # Stats grid
+        stats_grid = ttk.Frame(stats_frame)
+        stats_grid.pack(fill=tk.X)
+        
+        # Total
+        ttk.Label(stats_grid, text="Total Videos:", font=("Segoe UI", 10, "bold")).grid(row=0, column=0, sticky=tk.W, padx=(0, 10))
+        ttk.Label(stats_grid, text=str(total), font=("Segoe UI", 10)).grid(row=0, column=1, sticky=tk.W, padx=(0, 30))
+        
+        # Completed
+        ttk.Label(stats_grid, text="✅ Completed:", font=("Segoe UI", 10, "bold"), foreground="green").grid(row=0, column=2, sticky=tk.W, padx=(0, 10))
+        ttk.Label(stats_grid, text=str(completed), font=("Segoe UI", 10), foreground="green").grid(row=0, column=3, sticky=tk.W, padx=(0, 30))
+        
+        # Failed
+        ttk.Label(stats_grid, text="❌ Failed:", font=("Segoe UI", 10, "bold"), foreground="red").grid(row=1, column=0, sticky=tk.W, padx=(0, 10), pady=(5, 0))
+        ttk.Label(stats_grid, text=str(failed), font=("Segoe UI", 10), foreground="red").grid(row=1, column=1, sticky=tk.W, padx=(0, 30), pady=(5, 0))
+        
+        # Success rate
+        ttk.Label(stats_grid, text="📊 Success Rate:", font=("Segoe UI", 10, "bold")).grid(row=1, column=2, sticky=tk.W, padx=(0, 10), pady=(5, 0))
+        ttk.Label(stats_grid, text=f"{success_rate:.1f}%", font=("Segoe UI", 10)).grid(row=1, column=3, sticky=tk.W, pady=(5, 0))
+        
+        # Duration
+        ttk.Label(stats_grid, text="⏱️ Duration:", font=("Segoe UI", 10, "bold")).grid(row=2, column=0, sticky=tk.W, padx=(0, 10), pady=(5, 0))
+        ttk.Label(stats_grid, text=duration_str, font=("Segoe UI", 10)).grid(row=2, column=1, sticky=tk.W, columnspan=3, pady=(5, 0))
+        
+        # Errors section (if any)
+        if failed > 0 and self.batch_summary['errors']:
+            errors_frame = ttk.LabelFrame(main_frame, text="❌ Error Details", padding="15")
+            errors_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
+            
+            # Create text widget with scrollbar for errors
+            text_frame = ttk.Frame(errors_frame)
+            text_frame.pack(fill=tk.BOTH, expand=True)
+            
+            error_text = tk.Text(text_frame, height=8, wrap=tk.WORD, font=("Consolas", 9))
+            error_scrollbar = ttk.Scrollbar(text_frame, orient=tk.VERTICAL, command=error_text.yview)
+            error_text.configure(yscrollcommand=error_scrollbar.set)
+            
+            error_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            error_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+            
+            # Populate errors
+            for i, error in enumerate(self.batch_summary['errors'], 1):
+                error_text.insert(tk.END, f"{i}. {error['title']}\n")
+                error_text.insert(tk.END, f"   URL: {error['url']}\n")
+                error_text.insert(tk.END, f"   Error: {error['error']}\n\n")
+            
+            error_text.config(state=tk.DISABLED)
+            
+            # Troubleshooting tips
+            tips_label = ttk.Label(errors_frame, 
+                                 text="💡 Tips: Try different quality settings, check if videos are private/age-restricted, or retry later",
+                                 font=("Segoe UI", 9), foreground="gray", wraplength=550)
+            tips_label.pack(pady=(10, 0))
+        
+        # Action buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=(10, 0))
+        
+        # Open folder button
+        if completed > 0:
+            open_folder_btn = ttk.Button(button_frame, text="📁 Open Download Folder", 
+                                       command=lambda: os.startfile(self.download_path))
+            open_folder_btn.pack(side=tk.LEFT)
+        
+        # Retry failed button
+        if failed > 0:
+            retry_btn = ttk.Button(button_frame, text="🔄 Retry Failed Downloads", 
+                                 command=lambda: [summary_window.destroy(), self.retry_failed_downloads()])
+            retry_btn.pack(side=tk.LEFT, padx=(10, 0))
+        
+        # Close button
+        close_btn = ttk.Button(button_frame, text="✅ Close", 
+                             command=summary_window.destroy)
+        close_btn.pack(side=tk.RIGHT)
+        
+        # Reset batch summary
+        self.batch_summary = {'total': 0, 'completed': 0, 'failed': 0, 'errors': []}
+        
+    def retry_failed_downloads(self):
+        """Retry all failed downloads"""
+        failed_videos = [v for v in self.video_queue.values() if v.status == "error"]
+        
+        if not failed_videos:
+            messagebox.showinfo("Info", "No failed downloads to retry!")
+            return
+            
+        for video in failed_videos:
+            video.status = "pending"
+            video.progress = 0
+            video.error_message = ""
+            self.video_list.update_video(video.id, status="pending", progress=0)
+            
+        # Switch to queue tab and start downloads
+        self.notebook.select(1)
+        self.start_batch_download()
 
 def main():
     """Main application entry point"""
