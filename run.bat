@@ -1,29 +1,41 @@
 @echo off
 echo ==========================================
-echo      CZ Video Downloader v2.0 - Launcher
+echo     CZ Video Downloader v2.0 - Fixed Theme
 echo ==========================================
 echo.
 
-REM Check if dependencies are installed for v2
-python -c "import yt_dlp, requests, PIL" >nul 2>&1
+echo [Theme Test] Testing theme system first...
+python theme_test.py
+
 if %errorlevel% neq 0 (
-    echo Dependencies not found. Running smart installer...
-    echo.
-    python launcher_v2.py
-) else (
-    echo Starting CZ Video Downloader v2.0...
-    python main_v2.py
+    echo Theme test failed - checking main app...
 )
+
+echo.
+echo [Main App] Launching CZ Video Downloader v2.0...
+echo.
+
+REM Try to run main.py
+python main.py
 
 if %errorlevel% neq 0 (
     echo.
-    echo Application encountered an error!
-    echo Trying fallback to v1...
-    python main.py
+    echo Main app failed, trying fallback launcher...
+    python launcher.py
+    
     if %errorlevel% neq 0 (
         echo.
-        echo Both versions failed. Please check Python installation.
-        echo Download Python from: https://python.org
+        echo All attempts failed. Checking Python...
+        python --version
+        if %errorlevel% neq 0 (
+            echo.
+            echo Python not found or not in PATH!
+            echo Please install Python from https://python.org
+            echo Make sure to check "Add Python to PATH"
+        )
     )
-    pause
 )
+
+echo.
+echo Press any key to exit...
+pause >nul
