@@ -50,33 +50,62 @@ class DependencyInstaller:
         if not packages:
             return True
             
-        # Create progress window
-        self.create_progress_window(packages)
-        
-        # Install in background thread
-        install_thread = threading.Thread(target=self.install_worker, args=(packages,))
-        install_thread.daemon = True
-        install_thread.start()
-        
-        # Show progress window
-        self.progress_window.mainloop()
-        
-        return hasattr(self, 'install_success') and self.install_success
+        try:
+            # Create root window if needed
+            if self.root is None:
+                self.root = tk.Tk()
+                self.root.withdraw()
+                
+            # Create progress window
+            self.create_progress_window(packages)
+            
+            # Install in background thread
+            install_thread = threading.Thread(target=self.install_worker, args=(packages,))
+            install_thread.daemon = True
+            install_thread.start()
+            
+            # Show progress window
+            self.progress_window.mainloop()
+            
+            # Clean up
+            if self.root:
+                self.root.destroy()
+                self.root = None
+            
+            return hasattr(self, 'install_success') and self.install_success
+            
+        except Exception as e:
+            print(f"Warning: GUI installation failed: {e}")
+            print("Falling back to command line installation...")
+            return self.install_packages_cli(packages)
         
     def create_progress_window(self, packages):
         """Create installation progress window"""
-        self.progress_window = tk.Toplevel()
-        self.progress_window.title("Installing Dependencies")
-        self.progress_window.geometry("500x200")
-        self.progress_window.resizable(False, False)
-        self.progress_window.grab_set()
-        
-        # Center window
-        self.progress_window.update_idletasks()
-        x = (self.progress_window.winfo_screenwidth() // 2) - 250
-        y = (self.progress_window.winfo_screenheight() // 2) - 100
-        self.progress_window.geometry(f"500x200+{x}+{y}")
-        
+        try:
+            # Create root if not exists
+            if self.root is None:
+                self.root = tk.Tk()
+                self.root.withdraw()
+                
+            self.progress_window = tk.Toplevel(self.root)
+            self.progress_window.title("Installing Dependencies")
+            self.progress_window.geometry("500x200")
+            self.progress_window.resizable(False, False)
+            self.progress_window.grab_set()
+            
+            # Center window
+            self.progress_window.update_idletasks()
+            x = (self.progress_window.winfo_screenwidth() // 2) - 250
+            y = (self.progress_window.winfo_screenheight() // 2) - 100
+            self.progress_window.geometry(f"500x200+{x}+{y}")
+            
+        except Exception as e:
+            print(f"Warning: Could not create progress window: {e}")
+            # Create a simple root window instead
+            self.progress_window = tk.Tk()
+            self.progress_window.title("Installing Dependencies")
+            self.progress_window.geometry("500x200")
+            
         # Main frame
         main_frame = ttk.Frame(self.progress_window, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
@@ -141,13 +170,35 @@ class DependencyInstaller:
             self.status_var.set(f"❌ Installation error: {str(e)}")
             self.install_success = False
             self.progress_window.after(2000, self.progress_window.destroy)
+            
+    def install_packages_cli(self, packages):
+        """Fallback: install packages via command line"""
+        try:
+            print("Installing packages via command line...")
+            for package in packages:
+                print(f"Installing {package}...")
+                cmd = [sys.executable, "-m", "pip", "install", package, "--upgrade"]
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+                
+                if result.returncode != 0:
+                    print(f"Failed to install {package}: {result.stderr}")
+                    return False
+                else:
+                    print(f"✅ {package} installed successfully")
+                    
+            return True
+            
+        except Exception as e:
+            print(f"CLI installation failed: {e}")
+            return False
 
 def show_welcome_dialog():
     """Show welcome dialog"""
-    root = tk.Tk()
-    root.withdraw()  # Hide main window
-    
-    welcome_text = """🎬 Welcome to CZ Video Downloader v2.0!
+    try:
+        root = tk.Tk()
+        root.withdraw()  # Hide main window
+        
+        welcome_text = """🎬 Welcome to CZ Video Downloader v2.0!
 
 This is the modern version with enhanced features:
 • Beautiful modern interface
@@ -158,9 +209,12 @@ This is the modern version with enhanced features:
 • Support for YouTube, Facebook, TikTok, Instagram
 
 The application will now check and install any missing dependencies."""
-    
-    messagebox.showinfo("CZ Video Downloader v2.0", welcome_text)
-    root.destroy()
+        
+        messagebox.showinfo("CZ Video Downloader v2.0", welcome_text)
+        root.destroy()
+    except Exception as e:
+        print(f"Warning: Could not show welcome dialog: {e}")
+        # Continue without dialog
 
 def main():
     """Main launcher function"""
@@ -201,8 +255,16 @@ This may take a few minutes depending on your internet connection.
 Click 'Yes' to install automatically
 Click 'No' to exit and install manually"""
         
-        result = messagebox.askyesno("Install Dependencies", install_msg)
-        root.destroy()
+        try:
+            root = tk.Tk()
+            root.withdraw()
+            result = messagebox.askyesno("Install Dependencies", install_msg)
+            root.destroy()
+        except Exception as e:
+            print(f"Warning: Could not show dialog: {e}")
+            print("Please install dependencies manually:")
+            print(f"pip install {' '.join(missing_packages)}")
+            return False
         
         if not result:
             print("❌ Installation cancelled by user")
@@ -214,13 +276,17 @@ Click 'No' to exit and install manually"""
         
         if not success:
             print("❌ Failed to install dependencies")
-            root = tk.Tk()
-            root.withdraw()
-            messagebox.showerror("Installation Failed", 
-                               "Failed to install required dependencies.\n\n" +
-                               "Please install them manually using:\n" +
-                               f"pip install {' '.join(missing_packages)}")
-            root.destroy()
+            try:
+                root = tk.Tk()
+                root.withdraw()
+                messagebox.showerror("Installation Failed", 
+                                   "Failed to install required dependencies.\n\n" +
+                                   "Please install them manually using:\n" +
+                                   f"pip install {' '.join(missing_packages)}")
+                root.destroy()
+            except:
+                print("Could not show error dialog")
+                print(f"Please install manually: pip install {' '.join(missing_packages)}")
             return False
             
         print("✅ Dependencies installed successfully!")
@@ -233,22 +299,20 @@ Click 'No' to exit and install manually"""
     
     try:
         # Import and run the main application
-        if os.path.exists("main_v2.py"):
-            import main_v2
-            main_v2.main()
-        else:
-            # Fallback to original version
-            import main
-            main.main()
+        import main
+        main.main()
             
     except Exception as e:
         print(f"❌ Failed to launch application: {e}")
-        root = tk.Tk()
-        root.withdraw()
-        messagebox.showerror("Launch Error", 
-                           f"Failed to start the application:\n{e}\n\n" +
-                           "Please check the installation and try again.")
-        root.destroy()
+        try:
+            root = tk.Tk()
+            root.withdraw()
+            messagebox.showerror("Launch Error", 
+                               f"Failed to start the application:\n{e}\n\n" +
+                               "Please check the installation and try again.")
+            root.destroy()
+        except:
+            print("Could not show error dialog")
         return False
         
     return True
