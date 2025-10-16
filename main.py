@@ -19,6 +19,165 @@ from urllib.parse import urlparse
 from datetime import datetime
 import queue
 import webbrowser
+import logging
+import traceback
+
+class UIAnimations:
+    """Smooth UI animations and transitions"""
+    
+    @staticmethod
+    def fade_in_widget(widget, duration=300, steps=20):
+        """Fade in a widget smoothly"""
+        try:
+            original_bg = widget.cget('bg')
+            step_delay = duration // steps
+            
+            def animate_step(step):
+                if step <= steps:
+                    alpha = step / steps
+                    # Simple alpha blending simulation with background
+                    widget.after(step_delay, lambda: animate_step(step + 1))
+                    
+        except:
+            pass  # Fallback: no animation
+    
+    @staticmethod
+    def slide_in_progress(progress_bar, target_value, duration=500):
+        """Smooth progress bar animation"""
+        try:
+            current_value = progress_bar['value']
+            steps = 30
+            step_delay = duration // steps
+            step_size = (target_value - current_value) / steps
+            
+            def animate_step(step):
+                if step <= steps:
+                    new_value = current_value + (step_size * step)
+                    progress_bar['value'] = new_value
+                    progress_bar.after(step_delay, lambda: animate_step(step + 1))
+                else:
+                    progress_bar['value'] = target_value
+                    
+            animate_step(1)
+        except:
+            # Fallback: direct set
+            progress_bar['value'] = target_value
+    
+    @staticmethod
+    def pulse_button(button, color='#3b82f6', duration=1000):
+        """Pulse effect for important buttons"""
+        try:
+            original_bg = button.cget('bg')
+            
+            def pulse_step(step, direction=1):
+                if step < 20:
+                    # Simple color alternation
+                    if step % 4 == 0:
+                        button.config(bg=color)
+                    else:
+                        button.config(bg=original_bg)
+                    button.after(duration // 20, lambda: pulse_step(step + 1))
+                else:
+                    button.config(bg=original_bg)
+                    
+            pulse_step(0)
+        except:
+            pass
+
+class ErrorLogger:
+    """Enhanced error logging system for download failures"""
+    
+    def __init__(self, download_path):
+        self.download_path = download_path
+        self.log_file = os.path.join(download_path, "czdownloader_errors.log")
+        self.setup_logger()
+        
+    def setup_logger(self):
+        """Setup rotating file logger"""
+        self.logger = logging.getLogger("CZDownloader")
+        self.logger.setLevel(logging.INFO)
+        
+        # Clear existing handlers
+        self.logger.handlers.clear()
+        
+        # File handler with UTF-8 encoding
+        file_handler = logging.FileHandler(self.log_file, encoding='utf-8')
+        file_handler.setLevel(logging.INFO)
+        
+        # Formatter with detailed info
+        formatter = logging.Formatter(
+            '%(asctime)s | %(levelname)s | %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
+        file_handler.setFormatter(formatter)
+        self.logger.addHandler(file_handler)
+        
+    def log_download_error(self, video_item, error_msg, detailed_traceback=None):
+        """Log detailed download error"""
+        try:
+            # Basic error info
+            error_entry = {
+                'timestamp': datetime.now().isoformat(),
+                'video_title': getattr(video_item, 'title', 'Unknown'),
+                'video_url': getattr(video_item, 'url', 'Unknown'),
+                'video_quality': getattr(video_item, 'quality', 'Unknown'),
+                'error_message': str(error_msg),
+                'video_id': getattr(video_item, 'id', 'Unknown')
+            }
+            
+            # Log to file
+            log_msg = f"""
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎬 VIDEO DOWNLOAD ERROR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📺 Title: {error_entry['video_title']}
+🔗 URL: {error_entry['video_url']}
+🎯 Quality: {error_entry['video_quality']}
+🆔 Video ID: {error_entry['video_id']}
+❌ Error: {error_entry['error_message']}"""
+            
+            if detailed_traceback:
+                log_msg += f"\n\n🐛 DETAILED TRACEBACK:\n{detailed_traceback}"
+                
+            log_msg += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            
+            self.logger.error(log_msg)
+            
+        except Exception as e:
+            print(f"Failed to log error: {e}")
+            
+    def log_batch_summary(self, batch_summary):
+        """Log batch download summary"""
+        try:
+            total = batch_summary.get('total', 0)
+            completed = batch_summary.get('completed', 0)
+            failed = batch_summary.get('failed', 0)
+            start_time = batch_summary.get('start_time')
+            
+            if start_time:
+                duration = datetime.now() - start_time
+                duration_str = str(duration).split('.')[0]
+            else:
+                duration_str = "Unknown"
+                
+            summary_msg = f"""
+🎯 BATCH DOWNLOAD SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 Total Videos: {total}
+✅ Completed: {completed}
+❌ Failed: {failed}
+📈 Success Rate: {(completed/total*100) if total > 0 else 0:.1f}%
+⏱️ Duration: {duration_str}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"""
+            
+            self.logger.info(summary_msg)
+            
+        except Exception as e:
+            print(f"Failed to log batch summary: {e}")
+            
+    def get_log_file_path(self):
+        """Get the log file path"""
+        return self.log_file
 
 class TroubleshootingHelper:
     """Helper class for troubleshooting common download issues"""
@@ -270,6 +429,7 @@ class VideoItem:
         self.speed = 0
         self.eta = 0
         self.progress = 0
+        self.progress_mode = "determinate"  # determinate, indeterminate
         self.error_message = ""
         self.filename = ""
         self.added_time = datetime.now()
@@ -445,13 +605,13 @@ class VideoListFrame(ttk.Frame):
         progress_frame = tk.Frame(inner_frame, bg=colors['bg_card'])
         progress_frame.pack(fill=tk.X, pady=(0, 10))
         
-        # Progress bar (custom styling)
+        # Progress bar (custom styling with indeterminate support)
         progress_var = tk.DoubleVar()
         progress_bar = ttk.Progressbar(progress_frame, variable=progress_var, 
                                      maximum=100, style="Custom.Horizontal.TProgressbar")
         progress_bar.pack(fill=tk.X, pady=(0, 5))
         
-        # Progress text
+        # Progress text with animation support
         progress_text = tk.Label(progress_frame, text="Pending...",
                                 font=ModernStyle.FONTS['small'],
                                 fg=colors['text_secondary'],
@@ -527,8 +687,42 @@ class VideoListFrame(ttk.Frame):
         if 'title' in kwargs:
             widget['title_label'].config(text=kwargs['title'])
             
-        if 'progress' in kwargs:
-            widget['progress_var'].set(kwargs['progress'])
+        if 'progress' in kwargs or 'progress_mode' in kwargs:
+            progress_mode = getattr(video_item, 'progress_mode', 'determinate')
+            progress_value = kwargs.get('progress', video_item.progress)
+            
+            if progress_mode == 'indeterminate':
+                # Switch to indeterminate mode for unknown total
+                widget['progress_bar'].config(mode='indeterminate')
+                widget['progress_bar'].start(10)  # Animate every 10ms
+                widget['progress_text'].config(text="🔄 Downloading... (size unknown)")
+            else:
+                # Determinate mode with percentage
+                widget['progress_bar'].config(mode='determinate')
+                widget['progress_bar'].stop()
+                
+                # Smooth progress animation
+                try:
+                    current_progress = widget['progress_var'].get()
+                    if abs(progress_value - current_progress) > 1:  # Only animate significant changes
+                        UIAnimations.slide_in_progress(widget['progress_bar'], progress_value)
+                    else:
+                        widget['progress_var'].set(progress_value)
+                except:
+                    widget['progress_var'].set(progress_value)
+                
+                # Update progress text with details
+                if 'speed' in kwargs and 'eta' in kwargs:
+                    speed_mb = kwargs.get('speed', 0) / 1024 / 1024 if kwargs.get('speed') else 0
+                    eta = kwargs.get('eta', 0) or 0
+                    if speed_mb > 0 and eta > 0:
+                        widget['progress_text'].config(text=f"📥 {progress_value:.1f}% • {speed_mb:.1f} MB/s • ETA: {eta}s")
+                    elif progress_value > 0:
+                        widget['progress_text'].config(text=f"📥 {progress_value:.1f}% • Processing...")
+                    else:
+                        widget['progress_text'].config(text="📥 Starting download...")
+                elif progress_value > 0:
+                    widget['progress_text'].config(text=f"📥 {progress_value:.1f}% complete")
             
         if 'status' in kwargs:
             widget['status_label'].config(text=f"Status: {kwargs['status']}")
@@ -656,6 +850,9 @@ class ModernVideoDownloader:
         self.setup_ui()
         self.setup_download_folder()
         self.apply_modern_styles()
+        
+        # Initialize error logger after download folder is set
+        self.error_logger = ErrorLogger(self.download_path)
         
     def setup_ui(self):
         """Setup modern UI"""
@@ -1174,24 +1371,32 @@ Powered by yt-dlp"""
                     speed = d.get('speed', 0) or 0
                     eta = d.get('eta', 0) or 0
 
-                    # Only compute progress when we have a valid total > 0
+                    # Determine progress mode and calculate progress
                     if isinstance(total, (int, float)) and total > 0 and isinstance(downloaded, (int, float)):
+                        # Determinate mode - we know total size
                         progress = (downloaded / total) * 100
-                        # Clamp progress
-                        progress = max(0.0, min(100.0, progress))
+                        progress = max(0.0, min(100.0, progress))  # Clamp progress
                         video_item.progress = progress
+                        video_item.progress_mode = "determinate"
+                        
+                        # Update UI with determinate progress
+                        self.video_list.update_video(video_item.id,
+                                                   progress=progress,
+                                                   progress_mode="determinate",
+                                                   speed=speed,
+                                                   eta=eta)
                     else:
-                        # Fallback: don't change numeric progress, still update speed/eta
-                        progress = video_item.progress or 0.0
+                        # Indeterminate mode - unknown total size
+                        video_item.progress_mode = "indeterminate"
+                        
+                        # Update UI with indeterminate progress and speed info
+                        self.video_list.update_video(video_item.id,
+                                                   progress_mode="indeterminate",
+                                                   speed=speed,
+                                                   eta=eta)
 
                     video_item.speed = speed
                     video_item.eta = eta
-
-                    # Update UI with safe values
-                    self.video_list.update_video(video_item.id,
-                                               progress=progress,
-                                               speed=video_item.speed,
-                                               eta=video_item.eta)
                         
                 elif d['status'] == 'finished':
                     video_item.status = "completed"
@@ -1245,6 +1450,7 @@ Powered by yt-dlp"""
         except yt_dlp.DownloadError as e:
             error_msg = str(e)
             video_item.status = "error"
+            detailed_traceback = traceback.format_exc()
             
             # Categorize errors for better user understanding
             if "HTTP Error 403" in error_msg:
@@ -1264,6 +1470,9 @@ Powered by yt-dlp"""
             else:
                 video_item.error_message = f"Download failed: {error_msg[:100]}"
             
+            # Log detailed error
+            self.error_logger.log_download_error(video_item, error_msg, detailed_traceback)
+            
             self.video_list.update_video(video_item.id, status="error")
             
             # Update batch summary
@@ -1275,8 +1484,14 @@ Powered by yt-dlp"""
             })
             
         except Exception as e:
+            error_msg = f"Unexpected error: {str(e)}"
             video_item.status = "error"
-            video_item.error_message = f"Unexpected error: {str(e)[:100]}"
+            video_item.error_message = error_msg[:100]
+            detailed_traceback = traceback.format_exc()
+            
+            # Log detailed error
+            self.error_logger.log_download_error(video_item, error_msg, detailed_traceback)
+            
             self.video_list.update_video(video_item.id, status="error")
             
             # Update batch summary
@@ -1438,7 +1653,10 @@ Created with ❤️ by CZ Team"""
         else:
             duration_str = "Unknown"
         
-        # Create summary window
+        # Log batch summary to file
+        self.error_logger.log_batch_summary(self.batch_summary)
+        
+        # Create summary window with enhanced styling
         summary_window = tk.Toplevel(self.root)
         summary_window.title("Batch Download Summary")
         summary_window.geometry("600x500")
@@ -1527,6 +1745,11 @@ Created with ❤️ by CZ Team"""
             open_folder_btn = ttk.Button(button_frame, text="📁 Open Download Folder", 
                                        command=lambda: os.startfile(self.download_path))
             open_folder_btn.pack(side=tk.LEFT)
+        
+        # View log button
+        log_btn = ttk.Button(button_frame, text="📋 View Error Log", 
+                           command=lambda: os.startfile(self.error_logger.get_log_file_path()))
+        log_btn.pack(side=tk.LEFT, padx=(10, 0))
         
         # Retry failed button
         if failed > 0:
