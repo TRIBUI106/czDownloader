@@ -1,88 +1,213 @@
-# CZ Video Downloader
+# 🎬 CZ Video Downloader v2.0
 
-Ứng dụng download video từ YouTube, Facebook, TikTok, Instagram với giao diện đơn giản và chuyên nghiệp.
+**Modern video downloader with beautiful interface and advanced features**
 
-## Tính năng
+Ứng dụng download video hiện đại từ YouTube, Facebook, TikTok, Instagram với giao diện đẹp mắt và nhiều tính năng nâng cao.
 
-- ✅ Download video từ YouTube, Facebook, TikTok, Instagram
-- ✅ Chọn chất lượng video (best, 720p, 480p, 360p, worst)
-- ✅ Progress bar hiển thị tiến trình download
-- ✅ Tự động lưu vào thư mục `Downloads/czDownloader`
-- ✅ Giao diện đẹp với tkinter
-- ✅ Log chi tiết quá trình download
-- ✅ Chạy local, không cần deploy
+## ✨ Tính năng mới v2.0
 
-## Cài đặt
+### 🎨 **Giao diện hiện đại**
+- ✅ Material Design inspired UI
+- ✅ Dark/Light theme toggle  
+- ✅ Gradient colors và rounded corners
+- ✅ Professional progress indicators
+- ✅ Tabbed interface với settings panel
 
-1. **Cài đặt Python** (nếu chưa có):
-   - Download từ https://python.org (Python 3.7+)
-   - Đảm bảo check "Add Python to PATH"
+### 🔥 **Multi-URL Queue System**
+- ✅ Add nhiều URL cùng một lúc
+- ✅ Bulk input từ text area
+- ✅ Individual progress bar cho từng video
+- ✅ Queue management với pause/resume/cancel
+- ✅ Batch download capabilities
 
-2. **Cài đặt dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+### 📊 **Advanced Download Management**
+- ✅ Real-time progress tracking per video
+- ✅ Download speed và ETA display
+- ✅ File size information
+- ✅ Concurrent download settings
+- ✅ Retry failed downloads
 
-3. **Chạy ứng dụng**:
-   ```bash
-   python main.py
-   ```
+### 🛠️ **Smart Features**
+- ✅ Auto dependency installer
+- ✅ URL validation với real-time feedback
+- ✅ Download folder customization
+- ✅ Settings persistence
+- ✅ Error handling với user-friendly messages
 
-## Hướng dẫn sử dụng
+## 🚀 Quick Start
 
-1. Mở ứng dụng bằng lệnh `python main.py`
-2. Dán URL video vào ô "Video URL"
-3. Chọn chất lượng video mong muốn
-4. Nhấn nút "📥 Download"
-5. Theo dõi tiến trình qua progress bar
-6. Video sẽ được lưu vào `Downloads/czDownloader`
+### Option 1: One-Click Launch (Recommended)
+```bash
+# Just double-click this file:
+demo.bat         # Launch v2.0 with demo
+run.bat          # Launch production version
+```
 
-## Platform được hỗ trợ
+### Option 2: Manual Launch
+```bash
+python launcher_v2.py    # Smart launcher với auto-install
+python main_v2.py        # Direct launch (cần dependencies)
+```
 
-- **YouTube**: youtube.com, youtu.be
-- **Facebook**: facebook.com, fb.watch  
-- **TikTok**: tiktok.com
-- **Instagram**: instagram.com
-- **Twitter/X**: twitter.com, x.com (bonus)
+## 📸 Giao diện mới
 
-## Cấu trúc project
+### 🎯 **Download Tab**
+- Modern URL input với validation
+- Bulk URL text area  
+- Advanced settings (quality, concurrent downloads)
+- Smart dependency detection
+
+### 📋 **Queue Tab**  
+- Beautiful video cards với metadata
+- Individual progress bars
+- Download controls (pause/resume/cancel/retry)
+- Real-time status updates
+
+### ⚙️ **Settings Tab**
+- Download folder selection
+- Theme selection (Light/Dark)
+- Application information
+- Advanced configurations
+
+## 🎨 Screenshots
+
+```
+┌─────────────────────────────────────────────────────┐
+│  🎬 CZ Video Downloader v2.0                    🌙 ℹ️│
+├─────────────────────────────────────────────────────┤
+│  📥 Download  │  📋 Queue  │  ⚙️ Settings         │
+├─────────────────────────────────────────────────────┤
+│  📎 Add Videos                                      │
+│  ┌─────────────────────────────────────────────┐     │
+│  │ https://youtube.com/watch?v=...           │ ➕  │
+│  └─────────────────────────────────────────────┘     │
+│  ✅ Valid URL detected                              │
+│                                                     │
+│  📝 Bulk Add (one URL per line):                   │
+│  ┌─────────────────────────────────────────────┐     │
+│  │ https://youtube.com/watch?v=video1        │     │
+│  │ https://tiktok.com/@user/video/123        │     │
+│  │ https://instagram.com/p/ABC123/           │ 📥  │
+│  └─────────────────────────────────────────────┘     │
+└─────────────────────────────────────────────────────┘
+```
+
+## 📦 Platform Support
+
+| Platform | URL Format | Status |
+|----------|------------|--------|
+| **YouTube** | `youtube.com`, `youtu.be` | ✅ Full Support |
+| **Facebook** | `facebook.com`, `fb.watch` | ✅ Full Support |
+| **TikTok** | `tiktok.com` | ✅ Full Support |
+| **Instagram** | `instagram.com` | ✅ Full Support |
+| **Twitter/X** | `twitter.com`, `x.com` | ✅ Full Support |
+
+## 🔧 Installation
+
+### Auto Installation (Recommended)
+```bash
+# The launcher will auto-install everything needed
+python launcher_v2.py
+```
+
+### Manual Installation
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Launch application  
+python main_v2.py
+```
+
+### Required Dependencies
+- `yt-dlp` - Video downloader engine
+- `requests` - HTTP requests
+- `Pillow` - Image processing (optional, for thumbnails)
+- `tkinter` - GUI framework (built-in)
+
+## 📁 Project Structure
 
 ```
 czDownloader/
-├── main.py              # File chính của ứng dụng
-├── requirements.txt     # Dependencies cần thiết
-├── README.md           # Hướng dẫn này
-├── setup.bat           # Script cài đặt tự động (Windows)
-└── run.bat             # Script chạy nhanh (Windows)
+├── 🆕 main_v2.py          # Modern UI application
+├── 🆕 launcher_v2.py      # Smart launcher với auto-install
+├── 🆕 config.py           # Configuration management
+├── 📜 main.py             # Original version (fallback)
+├── 📦 requirements.txt    # Dependencies
+├── 🖱️ run.bat             # Windows launcher
+├── 🖱️ demo.bat            # Demo launcher
+├── 🛠️ setup.bat           # Manual setup script
+├── 📖 README.md           # Documentation
+└── 📋 INSTALL.md          # Detailed installation guide
 ```
 
-## Yêu cầu hệ thống
+## 🎯 Usage Guide
 
-- Windows 10/11 (hoặc macOS/Linux)
-- Python 3.7 trở lên
-- Internet connection
-- Khoảng 100MB dung lượng ổ cứng
+### 1. **Single URL Download**
+1. Paste URL vào input field
+2. Chọn quality mong muốn  
+3. Click "➕ Add to Queue"
+4. Switch sang Queue tab
+5. Click "⬇️ Download All"
 
-## Troubleshooting
+### 2. **Bulk URL Download**  
+1. Paste multiple URLs vào text area (1 URL/line)
+2. Click "📥 Add All URLs"
+3. Configure concurrent downloads
+4. Start batch download
 
-### Lỗi "yt-dlp not found"
-```bash
-pip install yt-dlp --upgrade
-```
+### 3. **Advanced Features**
+- **Theme Toggle**: Click 🌙/☀️ button in header
+- **Settings**: Use Settings tab for customization
+- **Progress Control**: Individual pause/resume/cancel per video
+- **Retry**: Auto-retry failed downloads
 
-### Lỗi "Permission denied" 
-- Chạy command prompt với quyền Administrator
-- Hoặc chọn thư mục khác để lưu video
+## 🎨 Themes
 
-### Video không download được
-- Kiểm tra URL có chính xác không
-- Một số video có thể bị hạn chế địa lý
-- Thử với chất lượng thấp hơn
+### ☀️ Light Theme
+- Clean white background
+- Blue accent colors
+- Professional appearance
+- Easy on the eyes
 
-## Tác giả
+### 🌙 Dark Theme  
+- Dark slate background
+- Purple accent colors
+- Modern cyberpunk feel
+- Reduced eye strain
 
-[TRIBUI106](https://github.com/TRIBUI106)
+## ⚡ Performance
 
-## License
+- **Multi-threading**: Non-blocking UI
+- **Concurrent Downloads**: Up to 5 simultaneous downloads
+- **Smart Queue**: Efficient resource management
+- **Progress Tracking**: Real-time updates
+- **Error Recovery**: Auto-retry mechanisms
+
+## 🆚 Version Comparison
+
+| Feature | v1.0 | v2.0 |
+|---------|------|------|
+| Single URL | ✅ | ✅ |
+| Multi URL | ❌ | ✅ |
+| Progress per video | ❌ | ✅ |
+| Themes | ❌ | ✅ |
+| Modern UI | ❌ | ✅ |
+| Batch download | ❌ | ✅ |
+| Auto installer | ❌ | ✅ |
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📄 License
 
 MIT License - Sử dụng tự do cho mục đích cá nhân và thương mại.
+
+## 👨‍💻 Author
+
+**[TRIBUI106](https://github.com/TRIBUI106)**
+
+---
+
+> 💡 **Tip**: Sử dụng `demo.bat` để trải nghiệm nhanh tất cả tính năng mới!

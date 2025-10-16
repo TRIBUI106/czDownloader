@@ -1,15 +1,19 @@
-# CZ Video Downloader Dependencies
-# Thư viện download video từ nhiều platform
+# CZ Video Downloader v2.0 Dependencies
+
+# Core video downloader
 yt-dlp>=2023.10.13
 
-# Thư viện HTTP requests
+# HTTP requests
 requests>=2.31.0
 
-# Thư viện xử lý path và file
-pathlib2>=2.3.7; python_version<"3.4"
+# Image processing for thumbnails (optional)
+Pillow>=10.0.0
 
-# Thư viện GUI (tkinter có sẵn trong Python)
+# GUI enhancements (optional)
 # tkinter (built-in)
 
-# Optional: Thư viện cho video processing
-# ffmpeg-python>=0.2.0
+# Optional: Better progress bars
+tqdm>=4.66.0
+
+# Optional: Configuration management
+configparser>=5.3.0
