@@ -539,11 +539,14 @@ class VideoListFrame(ttk.Frame):
                 for child in widget['error_frame'].winfo_children():
                     child.destroy()
                     
-                error_icon = ttk.Label(widget['error_frame'], text="⚠️", font=("Segoe UI", 10))
+                error_icon = tk.Label(widget['error_frame'], text="⚠️", font=("Segoe UI", 10),
+                                     bg=self.app.current_colors['bg_card'])
                 error_icon.pack(side=tk.LEFT, padx=(0, 5))
-                error_label = ttk.Label(widget['error_frame'], text=video_item.error_message,
+                error_label = tk.Label(widget['error_frame'], text=video_item.error_message,
                                       font=ModernStyle.FONTS['small'],
-                                      foreground="red", wraplength=500)
+                                      fg=self.app.current_colors['error'], 
+                                      bg=self.app.current_colors['bg_card'],
+                                      wraplength=500, anchor="w", justify="left")
                 error_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
                 widget['error_frame'].pack(fill=tk.X, pady=(5, 0))
             else:
@@ -910,8 +913,7 @@ Powered by yt-dlp"""
         self.style.configure("VideoCard.TFrame",
                            background=colors['bg_card'],
                            relief="solid",
-                           borderwidth=1,
-                           bordercolor=colors['border'])
+                           borderwidth=1)
         
         # Configure label styles
         self.style.configure("TLabel",
@@ -927,14 +929,12 @@ Powered by yt-dlp"""
         self.style.configure("TEntry",
                            fieldbackground=colors['bg_primary'],
                            foreground=colors['text_primary'],
-                           bordercolor=colors['border'],
                            insertcolor=colors['text_primary'])
         
         # Configure button styles
         self.style.configure("TButton",
                            background=colors['bg_tertiary'],
                            foreground=colors['text_primary'],
-                           bordercolor=colors['border'],
                            font=ModernStyle.FONTS['body'])
         
         self.style.map("TButton",
@@ -944,14 +944,12 @@ Powered by yt-dlp"""
         # Configure combobox styles
         self.style.configure("TCombobox",
                            fieldbackground=colors['bg_primary'],
-                           foreground=colors['text_primary'],
-                           bordercolor=colors['border'])
+                           foreground=colors['text_primary'])
         
         # Configure labelframe styles
         self.style.configure("TLabelframe",
                            background=colors['bg_primary'],
-                           foreground=colors['text_primary'],
-                           bordercolor=colors['border'])
+                           foreground=colors['text_primary'])
         
         self.style.configure("TLabelframe.Label",
                            background=colors['bg_primary'],
@@ -959,7 +957,7 @@ Powered by yt-dlp"""
                            font=ModernStyle.FONTS['body'])
         
         # Update main container background
-        self.main_container.configure(bg=colors['bg_secondary'])
+        # Note: ttk.Frame doesn't support bg, handled by style configure above
                        
     def setup_download_folder(self):
         """Setup download folder"""
@@ -1170,16 +1168,30 @@ Powered by yt-dlp"""
             
             def progress_hook(d):
                 if d['status'] == 'downloading':
-                    if 'total_bytes' in d and d['total_bytes']:
-                        progress = (d['downloaded_bytes'] / d['total_bytes']) * 100
+                    # Guard against None values (some extractors return None for total_bytes)
+                    total = d.get('total_bytes') or d.get('total_bytes_estimate') or 0
+                    downloaded = d.get('downloaded_bytes') or 0
+                    speed = d.get('speed', 0) or 0
+                    eta = d.get('eta', 0) or 0
+
+                    # Only compute progress when we have a valid total > 0
+                    if isinstance(total, (int, float)) and total > 0 and isinstance(downloaded, (int, float)):
+                        progress = (downloaded / total) * 100
+                        # Clamp progress
+                        progress = max(0.0, min(100.0, progress))
                         video_item.progress = progress
-                        video_item.speed = d.get('speed', 0)
-                        video_item.eta = d.get('eta', 0)
-                        
-                        self.video_list.update_video(video_item.id,
-                                                   progress=progress,
-                                                   speed=video_item.speed,
-                                                   eta=video_item.eta)
+                    else:
+                        # Fallback: don't change numeric progress, still update speed/eta
+                        progress = video_item.progress or 0.0
+
+                    video_item.speed = speed
+                    video_item.eta = eta
+
+                    # Update UI with safe values
+                    self.video_list.update_video(video_item.id,
+                                               progress=progress,
+                                               speed=video_item.speed,
+                                               eta=video_item.eta)
                         
                 elif d['status'] == 'finished':
                     video_item.status = "completed"
@@ -1339,7 +1351,7 @@ Powered by yt-dlp"""
         self.about_btn.config(bg=self.current_colors['primary_dark'])
         
         # Update main container
-        self.main_container.config(bg=self.current_colors['bg_secondary'])
+        # Note: ttk.Frame doesn't support bg, handled by style
         
         # Update widget styles
         self.update_widget_styles()
