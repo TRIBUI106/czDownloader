@@ -727,22 +727,58 @@ class VideoListFrame(ttk.Frame):
         if 'status' in kwargs:
             widget['status_label'].config(text=f"Status: {kwargs['status']}")
             
-            # Show/hide error message
+            # Enhanced status display with colors
+            colors = self.app.current_colors
+            status_color = colors['text_primary']
+            if kwargs['status'] == "downloading":
+                status_color = colors['primary']
+            elif kwargs['status'] == "completed":
+                status_color = colors['success']
+            elif kwargs['status'] == "error":
+                status_color = colors['error']
+            elif kwargs['status'] == "analyzing":
+                status_color = colors['warning']
+                
+            widget['status_label'].config(fg=status_color)
+
+            # Enhanced error message display
             if kwargs['status'] == "error" and hasattr(video_item, 'error_message') and video_item.error_message:
-                # Show error message
+                # Clear existing error display
                 for child in widget['error_frame'].winfo_children():
                     child.destroy()
                     
-                error_icon = tk.Label(widget['error_frame'], text="⚠️", font=("Segoe UI", 10),
-                                     bg=self.app.current_colors['bg_card'])
-                error_icon.pack(side=tk.LEFT, padx=(0, 5))
-                error_label = tk.Label(widget['error_frame'], text=video_item.error_message,
+                # Enhanced error display with better styling
+                error_container = tk.Frame(widget['error_frame'], bg=colors['bg_card'])
+                error_container.pack(fill=tk.X)
+                
+                # Error icon with styled background
+                error_icon_frame = tk.Frame(error_container, bg='#fef2f2', width=30, height=25, relief='solid', bd=1)
+                error_icon_frame.pack(side=tk.LEFT, padx=(0, 10), pady=2)
+                error_icon_frame.pack_propagate(False)
+                
+                error_icon = tk.Label(error_icon_frame, text="⚠️", font=("Segoe UI", 12),
+                                     bg='#fef2f2', fg='#dc2626')
+                error_icon.pack(expand=True)
+                
+                # Error message with better formatting
+                error_text_frame = tk.Frame(error_container, bg=colors['bg_card'])
+                error_text_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
+                
+                error_title = tk.Label(error_text_frame, text="Download Error:",
+                                      font=("Segoe UI", 9, "bold"),
+                                      fg=colors['error'],
+                                      bg=colors['bg_card'],
+                                      anchor="w")
+                error_title.pack(anchor=tk.W, fill=tk.X)
+                
+                error_label = tk.Label(error_text_frame, text=video_item.error_message,
                                       font=ModernStyle.FONTS['small'],
-                                      fg=self.app.current_colors['error'], 
-                                      bg=self.app.current_colors['bg_card'],
-                                      wraplength=500, anchor="w", justify="left")
-                error_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
-                widget['error_frame'].pack(fill=tk.X, pady=(5, 0))
+                                      fg=colors['text_secondary'], 
+                                      bg=colors['bg_card'],
+                                      wraplength=450, anchor="w", justify="left")
+                error_label.pack(anchor=tk.W, fill=tk.X)
+                
+                widget['error_frame'].pack(fill=tk.X, pady=(8, 0))
             else:
                 # Hide error message
                 widget['error_frame'].pack_forget()

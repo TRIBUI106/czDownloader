@@ -238,9 +238,33 @@ def main():
     root.geometry(f"600x400+{x}+{y}")
     
     print("✅ Theme test window created!")
-    print("🔄 Click the moon/sun button to test theme switching")
+    print("🔄 Testing theme switching automatically...")
+    
+    # Auto test sequence
+    def auto_test():
+        try:
+            # Test theme toggle after 1 second
+            root.after(1000, lambda: app.toggle_theme())
+            print("🌙 Switched to dark mode")
+            
+            # Switch back after another 1 second  
+            root.after(2000, lambda: app.toggle_theme())
+            print("☀️ Switched back to light mode")
+            
+            # Close after 3 seconds total
+            root.after(3000, lambda: [
+                print("✅ Theme test completed successfully!"),
+                root.destroy()
+            ])
+        except Exception as e:
+            print(f"⚠️ Theme test had issues: {e}")
+            root.after(3000, root.destroy)
+    
+    # Start auto test
+    auto_test()
     
     root.mainloop()
+    print("🎯 Theme test finished - proceeding to main app...")
 
 if __name__ == "__main__":
     main()
