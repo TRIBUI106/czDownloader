@@ -21,6 +21,246 @@ import queue
 import webbrowser
 import logging
 import traceback
+import requests
+import zipfile
+import shutil
+
+# Version info
+from version import VERSION as APP_VERSION, GITHUB_API_RELEASES as UPDATE_CHECK_URL, GITHUB_FULL as GITHUB_REPO, get_about_text
+
+class UpdateManager:
+    """Auto-update system for checking and downloading new versions"""
+    
+    def __init__(self, app_instance):
+        self.app = app_instance
+        self.current_version = APP_VERSION
+        self.latest_version = None
+        self.download_url = None
+        
+    def check_for_updates(self, show_no_update_msg=False):
+        """Check for updates on GitHub releases"""
+        def check_worker():
+            try:
+                print("🔍 Checking for updates...")
+                response = requests.get(UPDATE_CHECK_URL, timeout=10)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    self.latest_version = data.get('tag_name', '').replace('v', '')
+                    
+                    if self.latest_version and self.latest_version != self.current_version:
+                        # Find download URL
+                        for asset in data.get('assets', []):
+                            if asset['name'].endswith('.zip'):
+                                self.download_url = asset['browser_download_url']
+                                break
+                        
+                        if self.download_url:
+                            # Show update notification
+                            self.app.root.after(0, self.show_update_notification)
+                        
+                    elif show_no_update_msg:
+                        self.app.root.after(0, lambda: messagebox.showinfo(
+                            "Update Check", 
+                            "✅ You have the latest version!"
+                        ))
+                
+            except Exception as e:
+                print(f"Update check failed: {e}")
+                if show_no_update_msg:
+                    self.app.root.after(0, lambda: messagebox.showwarning(
+                        "Update Check", 
+                        f"⚠️ Could not check for updates:\n{str(e)}"
+                    ))
+        
+        # Run in background
+        thread = threading.Thread(target=check_worker)
+        thread.daemon = True
+        thread.start()
+    
+    def show_update_notification(self):
+        """Show update available notification"""
+        update_window = tk.Toplevel(self.app.root)
+        update_window.title("🆕 Update Available")
+        update_window.geometry("500x350")
+        update_window.resizable(False, False)
+        update_window.grab_set()
+        
+        # Center window
+        update_window.update_idletasks()
+        x = (update_window.winfo_screenwidth() // 2) - 250
+        y = (update_window.winfo_screenheight() // 2) - 175
+        update_window.geometry(f"500x350+{x}+{y}")
+        
+        # Main frame
+        main_frame = ttk.Frame(update_window, padding="30")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Icon and title
+        title_frame = ttk.Frame(main_frame)
+        title_frame.pack(fill=tk.X, pady=(0, 20))
+        
+        title_label = ttk.Label(title_frame, text="🆕 Update Available!", 
+                               font=("Segoe UI", 16, "bold"))
+        title_label.pack()
+        
+        # Version info
+        info_frame = ttk.Frame(main_frame)
+        info_frame.pack(fill=tk.X, pady=(0, 20))
+        
+        current_label = ttk.Label(info_frame, text=f"Current version: v{self.current_version}", 
+                                 font=("Segoe UI", 10))
+        current_label.pack()
+        
+        latest_label = ttk.Label(info_frame, text=f"Latest version: v{self.latest_version}", 
+                                font=("Segoe UI", 10, "bold"))
+        latest_label.pack()
+        
+        # Benefits text
+        benefits_frame = ttk.LabelFrame(main_frame, text="✨ What's New", padding="15")
+        benefits_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+        
+        benefits_text = """• Bug fixes and performance improvements
+• New features and UI enhancements  
+• Better error handling
+• Security updates
+• Enhanced compatibility"""
+        
+        benefits_label = ttk.Label(benefits_frame, text=benefits_text, 
+                                  font=("Segoe UI", 9), justify=tk.LEFT)
+        benefits_label.pack(anchor=tk.W)
+        
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X)
+        
+        # Update now button
+        update_btn = ttk.Button(button_frame, text="🚀 Update Now", 
+                               command=lambda: self.start_update(update_window),
+                               style="Accent.TButton")
+        update_btn.pack(side=tk.LEFT, padx=(0, 10))
+        
+        # Remind later button
+        later_btn = ttk.Button(button_frame, text="⏰ Remind Later", 
+                              command=update_window.destroy)
+        later_btn.pack(side=tk.LEFT, padx=(0, 10))
+        
+        # Skip button
+        skip_btn = ttk.Button(button_frame, text="❌ Skip This Version", 
+                             command=update_window.destroy)
+        skip_btn.pack(side=tk.RIGHT)
+        
+    def start_update(self, parent_window):
+        """Start the update process"""
+        parent_window.destroy()
+        
+        # Create update progress window
+        progress_window = tk.Toplevel(self.app.root)
+        progress_window.title("🔄 Updating...")
+        progress_window.geometry("400x200")
+        progress_window.resizable(False, False)
+        progress_window.grab_set()
+        
+        # Center window
+        progress_window.update_idletasks()
+        x = (progress_window.winfo_screenwidth() // 2) - 200
+        y = (progress_window.winfo_screenheight() // 2) - 100
+        progress_window.geometry(f"400x200+{x}+{y}")
+        
+        # Progress frame
+        main_frame = ttk.Frame(progress_window, padding="30")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Title
+        title_label = ttk.Label(main_frame, text="🔄 Updating CZ Video Downloader", 
+                               font=("Segoe UI", 12, "bold"))
+        title_label.pack(pady=(0, 20))
+        
+        # Progress bar
+        progress_var = tk.DoubleVar()
+        progress_bar = ttk.Progressbar(main_frame, variable=progress_var, 
+                                     maximum=100, length=300)
+        progress_bar.pack(pady=(0, 10))
+        
+        # Status label
+        status_var = tk.StringVar(value="Preparing update...")
+        status_label = ttk.Label(main_frame, textvariable=status_var, 
+                                font=("Segoe UI", 9))
+        status_label.pack()
+        
+        def update_worker():
+            try:
+                # Download update
+                status_var.set("📥 Downloading update...")
+                progress_var.set(25)
+                
+                response = requests.get(self.download_url, timeout=120)
+                if response.status_code != 200:
+                    raise Exception("Download failed")
+                
+                # Save and extract
+                status_var.set("📦 Extracting files...")
+                progress_var.set(50)
+                
+                with open("update.zip", "wb") as f:
+                    f.write(response.content)
+                
+                # Backup current version
+                status_var.set("💾 Creating backup...")
+                progress_var.set(75)
+                
+                backup_dir = Path("backup_old_version")
+                backup_dir.mkdir(exist_ok=True)
+                
+                # Extract update
+                with zipfile.ZipFile("update.zip", "r") as zip_ref:
+                    zip_ref.extractall("temp_update")
+                
+                # Install update
+                status_var.set("🔄 Installing update...")
+                progress_var.set(90)
+                
+                for item in Path("temp_update").rglob("*"):
+                    if item.is_file():
+                        rel_path = item.relative_to("temp_update")
+                        target = Path(rel_path)
+                        
+                        # Backup original if exists
+                        if target.exists():
+                            shutil.move(str(target), str(backup_dir / target.name))
+                        
+                        # Copy new file
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.move(str(item), str(target))
+                
+                # Cleanup
+                shutil.rmtree("temp_update")
+                os.remove("update.zip")
+                
+                status_var.set("✅ Update completed!")
+                progress_var.set(100)
+                
+                # Show success message
+                progress_window.after(1500, lambda: [
+                    progress_window.destroy(),
+                    messagebox.showinfo("Update Complete", 
+                                      "✅ Update completed successfully!\n\n"
+                                      "The application will now restart with the new version."),
+                    self.app.root.quit()
+                ])
+                
+            except Exception as e:
+                progress_window.after(0, lambda: [
+                    progress_window.destroy(),
+                    messagebox.showerror("Update Failed", 
+                                       f"❌ Update failed:\n{str(e)}\n\n"
+                                       "Please download the latest version manually from GitHub.")
+                ])
+        
+        # Start update in background
+        update_thread = threading.Thread(target=update_worker)
+        update_thread.daemon = True
+        update_thread.start()
 
 class UIAnimations:
     """Smooth UI animations and transitions"""
@@ -917,6 +1157,12 @@ class ModernVideoDownloader:
         # Initialize error logger after download folder is set
         self.error_logger = ErrorLogger(self.download_path)
         
+        # Initialize update manager
+        self.update_manager = UpdateManager(self)
+        
+        # Check for updates on startup (after 3 seconds delay)
+        self.root.after(3000, lambda: self.update_manager.check_for_updates())
+        
     def setup_ui(self):
         """Setup modern UI"""
         self.root.title("🎬 CZ Video Downloader v2.0")
@@ -979,6 +1225,14 @@ class ModernVideoDownloader:
                                   bg=self.current_colors['primary_dark'],
                                   fg="white", border=0, cursor="hand2")
         self.theme_btn.pack(side=tk.RIGHT, padx=5)
+        
+        # Update button
+        self.update_btn = tk.Button(self.btn_frame, text="🔄", font=("Segoe UI", 12),
+                                   command=lambda: self.update_manager.check_for_updates(show_no_update_msg=True), 
+                                   width=3,
+                                   bg=self.current_colors['primary_dark'],
+                                   fg="white", border=0, cursor="hand2")
+        self.update_btn.pack(side=tk.RIGHT, padx=5)
         
         # About button
         self.about_btn = tk.Button(self.btn_frame, text="ℹ️", font=("Segoe UI", 12),
@@ -1632,6 +1886,7 @@ Powered by yt-dlp"""
         self.title_label.config(bg=self.current_colors['primary'])
         self.btn_frame.config(bg=self.current_colors['primary'])
         self.theme_btn.config(bg=self.current_colors['primary_dark'])
+        self.update_btn.config(bg=self.current_colors['primary_dark'])
         self.about_btn.config(bg=self.current_colors['primary_dark'])
         
         # Update main container
@@ -1672,20 +1927,7 @@ Powered by yt-dlp"""
             
     def show_about(self):
         """Show about dialog"""
-        about_text = """🎬 CZ Video Downloader v2.0
-
-Advanced video downloader with modern interface
-
-Features:
-• Multi-platform support (YouTube, Facebook, TikTok, Instagram)
-• Multi-URL queue system
-• Individual progress tracking  
-• Dark/Light themes
-• Batch downloads
-• Modern UI with Material Design
-
-Powered by yt-dlp
-Created with ❤️ by CZ Team"""
+        about_text = get_about_text()
 
         messagebox.showinfo("About CZ Video Downloader", about_text)
         
