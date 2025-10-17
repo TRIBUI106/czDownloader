@@ -1,99 +1,127 @@
 # 🎬 CZ Video Downloader v2.0
 
-**Modern video downloader with beautiful interface and advanced features**
+**Modern video downloader với giao diện đẹp, hỗ trợ nhiều nền tảng**
 
-Ứng dụng download video hiện đại từ YouTube, Facebook, TikTok, Instagram với giao diện đẹp mắt và nhiều tính năng nâng cao.
+[![Python 3.7+](https://img.shields.io/badge/python-3.7%2B-blue.svg)](https://www.python.org/downloads/)
+[![Windows](https://img.shields.io/badge/platform-Windows-blue.svg)](https://www.microsoft.com/windows)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-## ✨ Tính năng mới v2.0
+## ✨ Tính năng nổi bật
 
-### 🎨 **Giao diện hiện đại**
-- ✅ Material Design inspired UI
-- ✅ Dark/Light theme toggle  
-- ✅ Gradient colors và rounded corners
-- ✅ Professional progress indicators
-- ✅ Tabbed interface với settings panel
+- 🌐 **Hỗ trợ đa nền tảng**: YouTube, Facebook, TikTok, Instagram, Twitter/X
+- 🎨 **Giao diện hiện đại**: UI đẹp mắt với theme sáng/tối, mượt mà
+- 📋 **Quản lý hàng đợi**: Thêm nhiều URL, theo dõi tiến độ từng video
+- ⚡ **Download đồng thời**: Tải nhiều video cùng lúc
+- 📊 **Theo dõi chi tiết**: Progress bar thời gian thực, tốc độ download
+- 🛠️ **Xử lý lỗi thông minh**: Log chi tiết, hướng dẫn khắc phục tự động
+- ⚙️ **Tùy chỉnh chất lượng**: Từ best đến worst
+- 🔄 **Auto-retry**: Tự động thử lại khi lỗi
 
-### 🔥 **Multi-URL Queue System**
-- ✅ Add nhiều URL cùng một lúc
-- ✅ Bulk input từ text area
-- ✅ Individual progress bar cho từng video
-- ✅ Queue management với pause/resume/cancel
-- ✅ Batch download capabilities
+## 🚀 Cách sử dụng (Cực kỳ đơn giản!)
 
-### 📊 **Advanced Download Management**
-- ✅ Real-time progress tracking per video
-- ✅ Download speed và ETA display
-- ✅ File size information
-- ✅ Concurrent download settings
-- ✅ Retry failed downloads
-
-### 🛠️ **Smart Features**
-- ✅ Auto dependency installer
-- ✅ URL validation với real-time feedback
-- ✅ Download folder customization
-- ✅ Settings persistence
-- ✅ Error handling với user-friendly messages
-
-## 🚀 Quick Start
-
-### Option 1: One-Click Launch (Recommended)
+### Bước 1: Tải về
 ```bash
-# Just double-click this file:
-demo.bat         # Launch v2.0 with demo
-run.bat          # Launch production version
+git clone https://github.com/TRIBUI106/czDownloader.git
+cd czDownloader
 ```
 
-### Option 2: Manual Launch
+### Bước 2: Chạy ngay lập tức
 ```bash
-python launcher_v2.py    # Smart launcher với auto-install
-python main_v2.py        # Direct launch (cần dependencies)
+# Chỉ cần double-click hoặc:
+.\run.bat
 ```
 
-## 📸 Giao diện mới
+**Thế thôi!** 🎉 File `run.bat` sẽ tự động:
+- ✅ Kiểm tra Python 
+- ✅ Cài đặt tất cả dependencies cần thiết
+- ✅ Setup FFmpeg
+- ✅ Test giao diện 
+- ✅ Khởi chạy ứng dụng
 
-### 🎯 **Download Tab**
-- Modern URL input với validation
-- Bulk URL text area  
-- Advanced settings (quality, concurrent downloads)
-- Smart dependency detection
+**Không cần cài đặt thủ công gì cả!**
 
-### 📋 **Queue Tab**  
-- Beautiful video cards với metadata
-- Individual progress bars
-- Download controls (pause/resume/cancel/retry)
-- Real-time status updates
+## 📱 Hướng dẫn sử dụng
 
-### ⚙️ **Settings Tab**
-- Download folder selection
-- Theme selection (Light/Dark)
-- Application information
-- Advanced configurations
+### Thêm video để tải
+1. **URL đơn**: Dán link vào ô input → Click "Add to Queue"
+2. **Nhiều URL**: Dán vào text area (mỗi URL một dòng) → "Add All URLs"
+3. **Hỗ trợ**: YouTube, Facebook, TikTok, Instagram, Twitter/X
 
-## 🎨 Screenshots
+### Tùy chọn download
+- **Chất lượng**: best, 1080p, 720p, 480p, 360p, worst
+- **Đồng thời**: 1-5 video cùng lúc
+- **Thư mục**: Mặc định `~/Downloads/czDownloader/`
+
+### Quản lý hàng đợi
+- **Điều khiển cá nhân**: Tạm dừng, hủy, thử lại từng video
+- **Thao tác hàng loạt**: Download tất cả, xóa hết, retry failed
+- **Theo dõi**: Progress bar thời gian thực + tốc độ
+- **Hỗ trợ lỗi**: Hệ thống troubleshooting tích hợp
+
+## 🎨 Giao diện
+
+### Các tab chính
+- **📥 Download**: Thêm URL và cấu hình
+- **📋 Queue**: Theo dõi và quản lý downloads  
+- **⚙️ Settings**: Tùy chỉnh thư mục và themes
+
+### Themes
+- **☀️ Light Mode**: Giao diện sáng, sạch sẽ
+- **🌙 Dark Mode**: Dễ nhìn trong môi trường tối
+- Chuyển đổi bất cứ lúc nào với nút theme ở header
+
+## 🔧 Khắc phục sự cố
+
+### Các lỗi thường gặp
+
+**"Python not found"**
+- Cài Python từ [python.org](https://python.org)
+- Nhớ tick "Add Python to PATH"
+
+**"Dependencies missing"**  
+- Chạy `run.bat` - tự động cài đặt
+- Hoặc thủ công: `pip install yt-dlp requests pillow`
+
+**"FFmpeg not found"**
+- App tự cài `ffmpeg-python`
+- FFmpeg đầy đủ: [ffmpeg.org](https://ffmpeg.org)
+
+**Download thất bại**
+- Dùng hệ thống help tích hợp (nút ❓)
+- Thử chất lượng khác
+- Video có thể private/bị khóa vùng
+
+## 📋 Cấu trúc project
 
 ```
-┌─────────────────────────────────────────────────────┐
-│  🎬 CZ Video Downloader v2.0                    🌙 ℹ️│
-├─────────────────────────────────────────────────────┤
-│  📥 Download  │  📋 Queue  │  ⚙️ Settings         │
-├─────────────────────────────────────────────────────┤
-│  📎 Add Videos                                      │
-│  ┌─────────────────────────────────────────────┐     │
-│  │ https://youtube.com/watch?v=...           │ ➕  │
-│  └─────────────────────────────────────────────┘     │
-│  ✅ Valid URL detected                              │
-│                                                     │
-│  📝 Bulk Add (one URL per line):                   │
-│  ┌─────────────────────────────────────────────┐     │
-│  │ https://youtube.com/watch?v=video1        │     │
-│  │ https://tiktok.com/@user/video/123        │     │
-│  │ https://instagram.com/p/ABC123/           │ 📥  │
-│  └─────────────────────────────────────────────┘     │
-└─────────────────────────────────────────────────────┘
+czDownloader/
+├── run.bat           # 🎯 File duy nhất cần chạy!
+├── main.py          # Ứng dụng chính
+├── README.md        # Hướng dẫn này
+├── requirements.txt # Dependencies (auto-install)
+└── config.py       # Cấu hình (tùy chọn)
 ```
 
-## 📦 Platform Support
+## ⚡ Tại sao chọn run.bat?
 
+**Trước đây** (phức tạp): 
+- setup.bat → demo.bat → setup_check.py → launcher.py → main.py
+- Nhiều file, dễ nhầm lẫn
+
+**Bây giờ** (đơn giản):
+- `run.bat` làm tất cả!
+- 1 file, 1 cú double-click → Xong!
+
+## 🛠️ Chi tiết kỹ thuật
+
+### Dependencies tự động
+- **yt-dlp**: Engine download chính
+- **requests**: HTTP requests  
+- **Pillow**: Xử lý ảnh
+- **tkinter**: GUI (có sẵn trong Python)
+- **ffmpeg-python**: Hỗ trợ video processing
+
+### Platform support
 | Platform | URL Format | Status |
 |----------|------------|--------|
 | **YouTube** | `youtube.com`, `youtu.be` | ✅ Full Support |
@@ -102,112 +130,54 @@ python main_v2.py        # Direct launch (cần dependencies)
 | **Instagram** | `instagram.com` | ✅ Full Support |
 | **Twitter/X** | `twitter.com`, `x.com` | ✅ Full Support |
 
-## 🔧 Installation
+### Hiệu suất
+- **Concurrent**: 1-5 downloads đồng thời
+- **Memory**: Tối ưu cho batch lớn
+- **Network**: Auto-retry, timeout handling
+- **Storage**: Tên file thông minh, tổ chức tốt
 
-### Auto Installation (Recommended)
+## 🎯 Demo nhanh
+
 ```bash
-# The launcher will auto-install everything needed
-python launcher_v2.py
+# Clone project
+git clone https://github.com/TRIBUI106/czDownloader.git
+cd czDownloader
+
+# Chạy ngay (tất cả đều tự động!)
+.\run.bat
 ```
 
-### Manual Installation
-```bash
-# Install dependencies
-pip install -r requirements.txt
+**Video demo**: Từ 0 đến chạy app chỉ trong 30 giây! 
 
-# Launch application  
-python main_v2.py
-```
+## 🤝 Đóng góp
 
-### Required Dependencies
-- `yt-dlp` - Video downloader engine
-- `requests` - HTTP requests
-- `Pillow` - Image processing (optional, for thumbnails)
-- `tkinter` - GUI framework (built-in)
+1. Fork repo này
+2. Tạo branch: `git checkout -b feature-moi`
+3. Commit: `git commit -am 'Thêm tính năng mới'`
+4. Push: `git push origin feature-moi`  
+5. Tạo Pull Request
 
-## 📁 Project Structure
+## 📞 Hỗ trợ
 
-```
-czDownloader/
-├── 🆕 main_v2.py          # Modern UI application
-├── 🆕 launcher_v2.py      # Smart launcher với auto-install
-├── 🆕 config.py           # Configuration management
-├── 📜 main.py             # Original version (fallback)
-├── 📦 requirements.txt    # Dependencies
-├── 🖱️ run.bat             # Windows launcher
-├── 🖱️ demo.bat            # Demo launcher
-├── 🛠️ setup.bat           # Manual setup script
-├── 📖 README.md           # Documentation
-└── 📋 INSTALL.md          # Detailed installation guide
-```
+- **Báo lỗi**: Tạo Issue trên GitHub
+- **Góp ý**: Request features qua Issues
+- **Help**: Dùng hệ thống troubleshooting tích hợp
 
-## 🎯 Usage Guide
+## 🌟 Tính năng độc quyền
 
-### 1. **Single URL Download**
-1. Paste URL vào input field
-2. Chọn quality mong muốn  
-3. Click "➕ Add to Queue"
-4. Switch sang Queue tab
-5. Click "⬇️ Download All"
-
-### 2. **Bulk URL Download**  
-1. Paste multiple URLs vào text area (1 URL/line)
-2. Click "📥 Add All URLs"
-3. Configure concurrent downloads
-4. Start batch download
-
-### 3. **Advanced Features**
-- **Theme Toggle**: Click 🌙/☀️ button in header
-- **Settings**: Use Settings tab for customization
-- **Progress Control**: Individual pause/resume/cancel per video
-- **Retry**: Auto-retry failed downloads
-
-## 🎨 Themes
-
-### ☀️ Light Theme
-- Clean white background
-- Blue accent colors
-- Professional appearance
-- Easy on the eyes
-
-### 🌙 Dark Theme  
-- Dark slate background
-- Purple accent colors
-- Modern cyberpunk feel
-- Reduced eye strain
-
-## ⚡ Performance
-
-- **Multi-threading**: Non-blocking UI
-- **Concurrent Downloads**: Up to 5 simultaneous downloads
-- **Smart Queue**: Efficient resource management
-- **Progress Tracking**: Real-time updates
-- **Error Recovery**: Auto-retry mechanisms
-
-## 🆚 Version Comparison
-
-| Feature | v1.0 | v2.0 |
-|---------|------|------|
-| Single URL | ✅ | ✅ |
-| Multi URL | ❌ | ✅ |
-| Progress per video | ❌ | ✅ |
-| Themes | ❌ | ✅ |
-| Modern UI | ❌ | ✅ |
-| Batch download | ❌ | ✅ |
-| Auto installer | ❌ | ✅ |
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+- ✅ **All-in-one**: 1 file run.bat làm tất cả
+- ✅ **Zero-config**: Không cần setup thủ công  
+- ✅ **Auto-install**: Dependencies tự cài
+- ✅ **Smart-retry**: Thông minh xử lý lỗi
+- ✅ **Beautiful UI**: Giao diện hiện đại mượt mà
+- ✅ **Vietnamese-friendly**: Tài liệu và UI tiếng Việt
 
 ## 📄 License
 
 MIT License - Sử dụng tự do cho mục đích cá nhân và thương mại.
 
-## 👨‍💻 Author
-
-**[TRIBUI106](https://github.com/TRIBUI106)**
-
 ---
 
-> 💡 **Tip**: Sử dụng `demo.bat` để trải nghiệm nhanh tất cả tính năng mới!
+**Made with ❤️ by CZ Team**
+
+*Happy downloading! 🎬✨*

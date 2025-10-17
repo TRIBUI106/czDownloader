@@ -322,6 +322,33 @@ class TroubleshootingHelper:
                               command=lambda: TroubleshootingHelper.update_ytdlp(help_window))
         update_btn.pack(side=tk.RIGHT, padx=(0, 10))
         
+        # FFmpeg install button (show if error mentions ffmpeg)
+        if "ffmpeg" in error_message.lower():
+            ffmpeg_btn = ttk.Button(button_frame, text="📦 Install FFmpeg", 
+                                  command=lambda: TroubleshootingHelper.install_ffmpeg_guide(help_window))
+            ffmpeg_btn.pack(side=tk.RIGHT, padx=(0, 10))
+        
+    @staticmethod
+    def install_ffmpeg_guide(parent_window):
+        """Show FFmpeg installation guide"""
+        guide_text = """FFmpeg Installation Guide:
+
+Method 1 - Automatic (Recommended):
+• pip install ffmpeg-python
+
+Method 2 - Manual Download:
+• Visit: https://ffmpeg.org/download.html
+• Download FFmpeg for Windows
+• Extract and add to PATH
+
+Method 3 - Using yt-dlp:
+• Some yt-dlp versions can auto-download FFmpeg
+• Try: yt-dlp --help (check for --install-ffmpeg)
+
+After installation, restart the application."""
+        
+        messagebox.showinfo("FFmpeg Installation", guide_text)
+        
     @staticmethod
     def update_ytdlp(parent_window):
         """Update yt-dlp in background"""
@@ -1459,6 +1486,9 @@ Powered by yt-dlp"""
                 'retries': 3,
                 'fragment_retries': 3,
                 'timeout': 30,
+                # FFmpeg options
+                'prefer_ffmpeg': True,
+                'ffmpeg_location': None,  # Let yt-dlp find it
             }
             
             # Platform-specific configurations
@@ -1489,7 +1519,9 @@ Powered by yt-dlp"""
             detailed_traceback = traceback.format_exc()
             
             # Categorize errors for better user understanding
-            if "HTTP Error 403" in error_msg:
+            if "ffmpeg" in error_msg.lower() or "postprocessor" in error_msg.lower():
+                video_item.error_message = "FFmpeg required - Please install FFmpeg or try different quality"
+            elif "HTTP Error 403" in error_msg:
                 video_item.error_message = "Access denied - Video may be private or region-blocked"
             elif "HTTP Error 404" in error_msg:
                 video_item.error_message = "Video not found - May have been deleted"
@@ -1539,16 +1571,17 @@ Powered by yt-dlp"""
             })
             
     def get_format_selector(self, quality):
-        """Get format selector for yt-dlp"""
+        """Get format selector for yt-dlp with FFmpeg fallbacks"""
+        # Try formats that don't require FFmpeg first, then fallback
         quality_map = {
-            "best": "best[ext=mp4]/best",
-            "1080p": "best[height<=1080][ext=mp4]/best[height<=1080]",
-            "720p": "best[height<=720][ext=mp4]/best[height<=720]",
-            "480p": "best[height<=480][ext=mp4]/best[height<=480]",
-            "360p": "best[height<=360][ext=mp4]/best[height<=360]",
-            "worst": "worst[ext=mp4]/worst"
+            "best": "best[ext=mp4]/best[ext=webm]/best[ext=flv]/best",
+            "1080p": "best[height<=1080][ext=mp4]/best[height<=1080][ext=webm]/best[height<=1080]",
+            "720p": "best[height<=720][ext=mp4]/best[height<=720][ext=webm]/best[height<=720]",
+            "480p": "best[height<=480][ext=mp4]/best[height<=480][ext=webm]/best[height<=480]",
+            "360p": "best[height<=360][ext=mp4]/best[height<=360][ext=webm]/best[height<=360]",
+            "worst": "worst[ext=mp4]/worst[ext=webm]/worst"
         }
-        return quality_map.get(quality, "best[ext=mp4]/best")
+        return quality_map.get(quality, "best[ext=mp4]/best[ext=webm]/best")
         
     def toggle_video_download(self, video_id):
         """Toggle pause/resume for video"""
