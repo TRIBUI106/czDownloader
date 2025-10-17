@@ -8,7 +8,7 @@ echo ==========================================
 echo.
 
 REM Check Python installation first
-echo [1/4] 🐍 Checking Python...
+echo [1/5] 🐍 Checking Python...
 python --version >nul 2>&1
 if %errorlevel% neq 0 (
     echo ❌ Python not found!
@@ -24,102 +24,13 @@ for /f "tokens=2" %%a in ('python --version 2^>^&1') do set PYTHON_VERSION=%%a
 echo ✅ Python %PYTHON_VERSION% found
 
 echo.
-echo [2/4] � Checking for updates...
+echo [2/5] 🔄 Checking for updates...
 
-REM Create temp update check script
-echo import requests > temp_update.py
-echo import json >> temp_update.py
-echo import sys >> temp_update.py
-echo import os >> temp_update.py
-echo import zipfile >> temp_update.py
-echo import shutil >> temp_update.py
-echo from pathlib import Path >> temp_update.py
-echo. >> temp_update.py
-echo try: >> temp_update.py
-echo     from version import VERSION as CURRENT_VERSION >> temp_update.py
-echo except ImportError: >> temp_update.py
-echo     CURRENT_VERSION = "2.0.0" >> temp_update.py
-echo GITHUB_API = "https://api.github.com/repos/TRIBUI106/czDownloader/releases/latest" >> temp_update.py
-echo. >> temp_update.py
-echo def check_update(): >> temp_update.py
-echo     try: >> temp_update.py
-echo         print("🔍 Checking for updates...") >> temp_update.py
-echo         response = requests.get(GITHUB_API, timeout=10) >> temp_update.py
-echo         if response.status_code == 200: >> temp_update.py
-echo             data = response.json() >> temp_update.py
-echo             latest_version = data.get('tag_name', '').replace('v', '') >> temp_update.py
-echo             if latest_version and latest_version != CURRENT_VERSION: >> temp_update.py
-echo                 print(f"🆕 New version available: v{latest_version} (current: v{CURRENT_VERSION})") >> temp_update.py
-echo                 download_url = None >> temp_update.py
-echo                 for asset in data.get('assets', []): >> temp_update.py
-echo                     if asset['name'].endswith('.zip'): >> temp_update.py
-echo                         download_url = asset['browser_download_url'] >> temp_update.py
-echo                         break >> temp_update.py
-echo                 if download_url: >> temp_update.py
-echo                     choice = input("🤔 Do you want to update now? (y/N): ").lower() >> temp_update.py
-echo                     if choice == 'y': >> temp_update.py
-echo                         return download_update(download_url, latest_version) >> temp_update.py
-echo             else: >> temp_update.py
-echo                 print("✅ You have the latest version!") >> temp_update.py
-echo         else: >> temp_update.py
-echo             print("⚠️  Could not check for updates") >> temp_update.py
-echo     except Exception as e: >> temp_update.py
-echo         print(f"⚠️  Update check failed: {e}") >> temp_update.py
-echo     return False >> temp_update.py
-echo. >> temp_update.py
-echo def download_update(url, version): >> temp_update.py
-echo     try: >> temp_update.py
-echo         print(f"📥 Downloading v{version}...") >> temp_update.py
-echo         response = requests.get(url, timeout=60) >> temp_update.py
-echo         if response.status_code == 200: >> temp_update.py
-echo             backup_dir = Path("backup_old_version") >> temp_update.py
-echo             backup_dir.mkdir(exist_ok=True) >> temp_update.py
-echo             update_zip = "update.zip" >> temp_update.py
-echo             with open(update_zip, 'wb') as f: >> temp_update.py
-echo                 f.write(response.content) >> temp_update.py
-echo             print("📦 Extracting update...") >> temp_update.py
-echo             with zipfile.ZipFile(update_zip, 'r') as zip_ref: >> temp_update.py
-echo                 zip_ref.extractall("temp_update") >> temp_update.py
-echo             print("🔄 Installing update...") >> temp_update.py
-echo             for item in Path("temp_update").rglob("*"): >> temp_update.py
-echo                 if item.is_file(): >> temp_update.py
-echo                     rel_path = item.relative_to("temp_update") >> temp_update.py
-echo                     target = Path(rel_path) >> temp_update.py
-echo                     if target.exists(): >> temp_update.py
-echo                         shutil.move(str(target), str(backup_dir / target.name)) >> temp_update.py
-echo                     target.parent.mkdir(parents=True, exist_ok=True) >> temp_update.py
-echo                     shutil.move(str(item), str(target)) >> temp_update.py
-echo             shutil.rmtree("temp_update") >> temp_update.py
-echo             os.remove(update_zip) >> temp_update.py
-echo             print("✅ Update completed successfully!") >> temp_update.py
-echo             print("🎉 Restarting with new version...") >> temp_update.py
-echo             return True >> temp_update.py
-echo         else: >> temp_update.py
-echo             print("❌ Download failed") >> temp_update.py
-echo     except Exception as e: >> temp_update.py
-echo         print(f"❌ Update failed: {e}") >> temp_update.py
-echo     return False >> temp_update.py
-echo. >> temp_update.py
-echo if __name__ == "__main__": >> temp_update.py
-echo     updated = check_update() >> temp_update.py
-echo     if updated: >> temp_update.py
-echo         print("Restart the application to use new version") >> temp_update.py
-
-REM Run update check (only if requests available)
-python -c "import requests" >nul 2>&1
-if %errorlevel% equ 0 (
-    python temp_update.py
-    set UPDATE_STATUS=%errorlevel%
-) else (
-    echo ⚠️  Requests not available - skipping update check
-    set UPDATE_STATUS=0
-)
-
-REM Clean up
-del temp_update.py >nul 2>&1
+REM Run update check
+python scripts\quick_update_check.py 2>nul
 
 echo.
-echo [3/4] �📦 Checking dependencies...
+echo [3/5] 📦 Checking dependencies...
 
 REM Create temp Python script for dependency check
 echo import sys > temp_setup.py
@@ -194,16 +105,6 @@ del temp_setup.py >nul 2>&1
 
 REM Check if setup failed
 if %SETUP_ERROR% neq 0 (
-    echo.
-    echo ❌ Setup check failed!
-    echo 💡 Try running as Administrator or install packages manually:
-    echo    pip install yt-dlp requests pillow ffmpeg-python
-    echo.
-    pause
-    exit /b 1
-)
-
-if %errorlevel% neq 0 (
     echo.
     echo ❌ Setup check failed!
     echo 💡 Try running as Administrator or install packages manually:

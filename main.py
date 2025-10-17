@@ -26,7 +26,7 @@ import zipfile
 import shutil
 
 # Version info
-from version import VERSION as APP_VERSION, GITHUB_API_RELEASES as UPDATE_CHECK_URL, GITHUB_FULL as GITHUB_REPO, get_about_text
+from scripts.version import VERSION as APP_VERSION, GITHUB_API_RELEASES as UPDATE_CHECK_URL, GITHUB_FULL as GITHUB_REPO, get_about_text
 
 class UpdateManager:
     """Auto-update system for checking and downloading new versions"""

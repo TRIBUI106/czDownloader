@@ -16,6 +16,8 @@
 - 🛠️ **Xử lý lỗi thông minh**: Log chi tiết, hướng dẫn khắc phục tự động
 - ⚙️ **Tùy chỉnh chất lượng**: Từ best đến worst
 - 🔄 **Auto-retry**: Tự động thử lại khi lỗi
+- 🆕 **Auto-update system**: Tự động kiểm tra và cập nhật phiên bản mới
+- 🎯 **One-click setup**: Chỉ cần chạy run.bat, mọi thứ tự động!
 
 ## 🚀 Cách sử dụng (Cực kỳ đơn giản!)
 
@@ -33,6 +35,7 @@ cd czDownloader
 
 **Thế thôi!** 🎉 File `run.bat` sẽ tự động:
 - ✅ Kiểm tra Python 
+- ✅ Kiểm tra updates từ GitHub
 - ✅ Cài đặt tất cả dependencies cần thiết
 - ✅ Setup FFmpeg
 - ✅ Test giao diện 
@@ -65,6 +68,11 @@ cd czDownloader
 - **📋 Queue**: Theo dõi và quản lý downloads  
 - **⚙️ Settings**: Tùy chỉnh thư mục và themes
 
+### Header buttons
+- **🌙/☀️**: Chuyển đổi theme Dark/Light
+- **🔄**: Kiểm tra update từ GitHub
+- **ℹ️**: Thông tin về ứng dụng
+
 ### Themes
 - **☀️ Light Mode**: Giao diện sáng, sạch sẽ
 - **🌙 Dark Mode**: Dễ nhìn trong môi trường tối
@@ -95,11 +103,13 @@ cd czDownloader
 
 ```
 czDownloader/
-├── run.bat           # 🎯 File duy nhất cần chạy!
-├── main.py          # Ứng dụng chính
-├── README.md        # Hướng dẫn này
-├── requirements.txt # Dependencies (auto-install)
-└── config.py       # Cấu hình (tùy chọn)
+├── run.bat                 # 🎯 File duy nhất cần chạy!
+├── main.py                # Ứng dụng chính với UI
+├── version.py             # Quản lý version và thông tin app
+├── quick_update_check.py  # Script kiểm tra update nhanh
+├── README.md             # Hướng dẫn này
+├── requirements.txt      # Dependencies (auto-install)
+└── config.py            # Cấu hình (tùy chọn)
 ```
 
 ## ⚡ Tại sao chọn run.bat?
@@ -168,9 +178,29 @@ cd czDownloader
 - ✅ **All-in-one**: 1 file run.bat làm tất cả
 - ✅ **Zero-config**: Không cần setup thủ công  
 - ✅ **Auto-install**: Dependencies tự cài
+- ✅ **Auto-update**: Tự động kiểm tra và cập nhật từ GitHub
 - ✅ **Smart-retry**: Thông minh xử lý lỗi
-- ✅ **Beautiful UI**: Giao diện hiện đại mượt mà
+- ✅ **Beautiful UI**: Giao diện hiện đại mượt mà với nút update
+- ✅ **Version management**: Hệ thống quản lý version chuyên nghiệp
 - ✅ **Vietnamese-friendly**: Tài liệu và UI tiếng Việt
+
+### 🆕 Hệ thống Auto-Update
+
+**Tự động kiểm tra:**
+- Mỗi lần khởi động qua `run.bat`
+- Khi click nút 🔄 trong app
+- Sau 3 giây khi mở app
+
+**Tự động cập nhật:**
+- Download từ GitHub Releases
+- Backup phiên bản cũ
+- Cài đặt phiên bản mới
+- Khởi động lại app tự động
+
+**An toàn:**
+- Backup trước khi update
+- Rollback nếu có lỗi
+- Không làm mất dữ liệu
 
 ## 📄 License
 
