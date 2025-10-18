@@ -135,23 +135,23 @@ echo         root.geometry(f'300x200+{x}+{y}') >> temp_theme.py
 echo         label = tk.Label(root, text='🎨 Testing Themes...', font=('Segoe UI', 12)) >> temp_theme.py
 echo         label.pack(expand=True) >> temp_theme.py
 echo         def test_themes(): >> temp_theme.py
-echo             time.sleep(0.5) >> temp_theme.py
+echo             time.sleep(0.3) >> temp_theme.py
 echo             root.after(0, lambda: root.config(bg='#1e293b')) >> temp_theme.py
 echo             root.after(0, lambda: label.config(bg='#1e293b', fg='#f1f5f9', text='🌙 Dark Mode')) >> temp_theme.py
 echo             print('🌙 Switched to dark mode') >> temp_theme.py
-echo             time.sleep(1) >> temp_theme.py
+echo             time.sleep(0.3) >> temp_theme.py
 echo             root.after(0, lambda: root.config(bg='white')) >> temp_theme.py
 echo             root.after(0, lambda: label.config(bg='white', fg='black', text='☀️ Light Mode')) >> temp_theme.py
 echo             print('☀️ Switched to light mode') >> temp_theme.py
-echo             time.sleep(1) >> temp_theme.py
+echo             time.sleep(0.3) >> temp_theme.py
 echo             root.after(0, lambda: label.config(text='✅ Theme Test OK!')) >> temp_theme.py
 echo             print('✅ Theme test completed!') >> temp_theme.py
-echo             time.sleep(0.5) >> temp_theme.py
+echo             time.sleep(0.3) >> temp_theme.py
 echo             root.after(0, root.destroy) >> temp_theme.py
 echo         thread = threading.Thread(target=test_themes) >> temp_theme.py
 echo         thread.daemon = True >> temp_theme.py
 echo         thread.start() >> temp_theme.py
-echo         root.after(3000, root.destroy) >> temp_theme.py
+echo         root.after(1000, root.destroy) >> temp_theme.py
 echo         root.mainloop() >> temp_theme.py
 echo     except Exception as e: >> temp_theme.py
 echo         print(f'⚠️  Theme test failed: {e}') >> temp_theme.py

@@ -402,7 +402,7 @@ class ErrorLogger:
                 
             summary_msg = f"""
 🎯 BATCH DOWNLOAD SUMMARY
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📊 Total Videos: {total}
 ✅ Completed: {completed}
 ❌ Failed: {failed}
@@ -962,11 +962,13 @@ class VideoListFrame(ttk.Frame):
                 # Switch to indeterminate mode for unknown total
                 widget['progress_bar'].config(mode='indeterminate')
                 widget['progress_bar'].start(10)  # Animate every 10ms
+                widget['progress_bar'].update_idletasks()
                 widget['progress_text'].config(text="🔄 Downloading... (size unknown)")
             else:
                 # Determinate mode with percentage
                 widget['progress_bar'].config(mode='determinate')
                 widget['progress_bar'].stop()
+                widget['progress_bar'].update_idletasks()
                 
                 # Smooth progress animation
                 try:
@@ -992,7 +994,18 @@ class VideoListFrame(ttk.Frame):
                     widget['progress_text'].config(text=f"📥 {progress_value:.1f}% complete")
             
         if 'status' in kwargs:
-            widget['status_label'].config(text=f"Status: {kwargs['status']}")
+            # Map status to emoji and user-friendly text
+            status_map = {
+                'pending': '⏳ Pending',
+                'analyzing': '🔍 Analyzing',
+                'downloading': '⬇️ Downloading',
+                'paused': '⏸️ Paused',
+                'completed': '✅ Completed',
+                'error': '❌ Error',
+                'cancelled': '🚫 Cancelled'
+            }
+            display_text = status_map.get(kwargs['status'], kwargs['status'].capitalize())
+            widget['status_label'].config(text=display_text)
             
             # Enhanced status display with colors
             colors = self.app.current_colors
@@ -1507,16 +1520,36 @@ Powered by yt-dlp"""
             return False
             
     def add_url_to_queue(self):
-        """Add single URL to queue"""
+        """Add single URL or playlist to queue"""
         url = self.url_var.get().strip()
         if not url:
-            messagebox.showerror("Error", "Please enter a URL!")
+            messagebox.showerror("Error", "Please enter a URL! 🎯")
             return
-            
         if not self.validate_url(url):
-            messagebox.showerror("Error", "URL not supported!")
+            messagebox.showerror("Error", "URL not supported! 🚫")
             return
-            
+        # Detect playlist URLs and add all entries
+        try:
+            import yt_dlp
+            # Use flat extraction to get playlist entries
+            if 'playlist' in url or 'list=' in url:
+                opts = {'quiet': True, 'extract_flat': 'in_playlist'}
+                with yt_dlp.YoutubeDL(opts) as ydl:
+                    info = ydl.extract_info(url, download=False)
+                entries = info.get('entries', []) or []
+                count = 0
+                for entry in entries:
+                    video_url = entry.get('url') or entry.get('webpage_url')
+                    if video_url and self.validate_url(video_url):
+                        self.add_video_to_queue(video_url)
+                        count += 1
+                messagebox.showinfo("Playlist Added", f"✅ Added {count} videos from playlist 📃")
+                self.url_var.set("")
+                return
+        except Exception:
+            # Fallback to single URL if playlist parsing fails
+            pass
+        # Single video
         self.add_video_to_queue(url)
         self.url_var.set("")
         
@@ -1646,10 +1679,8 @@ Powered by yt-dlp"""
             'start_time': datetime.now()
         }
             
-        max_concurrent = int(self.concurrent_var.get())
-        
-        for i, video in enumerate(pending_videos[:max_concurrent]):
-            self.start_video_download(video.id)
+        # Start initial downloads up to concurrency limit
+        self.check_and_start_more()
             
         # Start monitoring thread for batch completion
         monitor_thread = threading.Thread(target=self.monitor_batch_completion)
@@ -1764,6 +1795,14 @@ Powered by yt-dlp"""
                     'format': 'best[ext=mp4]/best',
                 })
             
+            # Use aria2c for segmented downloading if available
+            try:
+                import shutil
+                if shutil.which('aria2c'):
+                    ydl_opts['external_downloader'] = 'aria2c'
+                    ydl_opts['external_downloader_args'] = ['-x', '16', '-k', '1M']
+            except Exception:
+                pass
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([video_item.url])
                 
@@ -1823,7 +1862,13 @@ Powered by yt-dlp"""
                 'url': video_item.url[:50] + "...",
                 'error': video_item.error_message
             })
-            
+        finally:
+            # After finishing one download, start more if pending
+            try:
+                self.check_and_start_more()
+            except Exception:
+                pass
+    
     def get_format_selector(self, quality):
         """Get format selector for yt-dlp with FFmpeg fallbacks"""
         # Try formats that don't require FFmpeg first, then fallback
@@ -1861,6 +1906,7 @@ Powered by yt-dlp"""
     def browse_folder(self):
         """Browse for download folder"""
         folder = filedialog.askdirectory(initialdir=self.download_path)
+
         if folder:
             self.download_path = folder
             self.folder_var.set(folder)
@@ -2093,47 +2139,16 @@ Powered by yt-dlp"""
         # Switch to queue tab and start downloads
         self.notebook.select(1)
         self.start_batch_download()
-
-def main():
-    """Main application entry point"""
-    # Check dependencies
-    try:
-        import yt_dlp
-        import requests
-    except ImportError as e:
-        result = tk.messagebox.askyesno("Missing Dependencies", 
-                                       f"Required libraries not found: {e}\n\n" +
-                                       "Would you like to install them automatically?")
-        if result:
-            import subprocess
-            import sys
-            try:
-                subprocess.check_call([sys.executable, "-m", "pip", "install", "yt-dlp", "requests", "pillow"])
-                tk.messagebox.showinfo("Success", "Dependencies installed successfully!\nPlease restart the application.")
-            except Exception as install_error:
-                tk.messagebox.showerror("Installation Failed", f"Failed to install dependencies:\n{install_error}")
-        return
     
-    # Create and run application
-    root = tk.Tk()
-    
-    # Set window icon (if available)
-    try:
-        root.iconbitmap('icon.ico')
-    except:
-        pass
-        
-    app = ModernVideoDownloader(root)
-    
-    # Center window on screen
-    root.update_idletasks()
-    width = root.winfo_width()
-    height = root.winfo_height()
-    x = (root.winfo_screenwidth() // 2) - (width // 2)
-    y = (root.winfo_screenheight() // 2) - (height // 2)
-    root.geometry(f"{width}x{height}+{x}+{y}")
-    
-    root.mainloop()
-
-if __name__ == "__main__":
-    main()
+    def check_and_start_more(self):
+        """Start next pending downloads up to concurrency limit"""
+        max_concurrent = int(self.concurrent_var.get())
+        # count current downloading threads
+        current = [v for v in self.video_queue.values() if v.status == "downloading"]
+        pending = [v for v in self.video_queue.values() if v.status == "pending"]
+        for video in pending:
+            if len(current) < max_concurrent:
+                self.start_video_download(video.id)
+                current.append(video)
+            else:
+                break
