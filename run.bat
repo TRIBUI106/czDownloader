@@ -176,7 +176,7 @@ if not exist "%USERPROFILE%\Downloads\czDownloader" (
 )
 
 REM Launch main application
-python main.py
+call python main.py
 
 if %errorlevel% neq 0 (
     echo.
@@ -192,7 +192,6 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo ✅ Application launched successfully!
-echo 🎯 Closing launcher in 2 seconds...
-timeout /t 2 >nul
-exit
+echo ✅ Application launched successfully! 🎉
+echo Press any key to close this launcher...
+pause >nul

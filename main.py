@@ -1546,9 +1546,12 @@ Powered by yt-dlp"""
                 messagebox.showinfo("Playlist Added", f"✅ Added {count} videos from playlist 📃")
                 self.url_var.set("")
                 return
-        except Exception:
-            # Fallback to single URL if playlist parsing fails
+        except yt_dlp.DownloadError:
+            # Not a playlist, fall back to single
             pass
+        except Exception as e:
+            messagebox.showerror("Playlist Error", f"❌ Failed to parse playlist: {e}")
+            return
         # Single video
         self.add_video_to_queue(url)
         self.url_var.set("")
@@ -1750,13 +1753,17 @@ Powered by yt-dlp"""
                     video_item.status = "completed"
                     video_item.progress = 100
                     video_item.filename = os.path.basename(d['filename'])
-                    
+                    # Update UI
                     self.video_list.update_video(video_item.id,
                                                status="completed",
                                                progress=100)
-                    
                     # Update batch summary
                     self.batch_summary['completed'] += 1
+                    # Start next pending downloads
+                    try:
+                        self.check_and_start_more()
+                    except Exception:
+                        pass
                     
             # Enhanced yt-dlp options
             ydl_opts = {
@@ -1885,8 +1892,7 @@ Powered by yt-dlp"""
     def toggle_video_download(self, video_id):
         """Toggle pause/resume for video"""
         # This would require more advanced implementation with yt-dlp
-        pass
-        
+        pass        
     def cancel_video_download(self, video_id):
         """Cancel video download"""
         if video_id in self.video_queue:
@@ -2152,3 +2158,10 @@ Powered by yt-dlp"""
                 current.append(video)
             else:
                 break
+
+# Sau khi định nghĩa các lớp và hàm ở trên, thêm phần này ở cuối file
+if __name__ == "__main__":
+    # Khởi tạo và chạy ứng dụng chính
+    root = tk.Tk()
+    app = ModernVideoDownloader(root)
+    root.mainloop()
