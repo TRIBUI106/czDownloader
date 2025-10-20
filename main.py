@@ -1858,12 +1858,14 @@ Powered by yt-dlp"""
             video_item.status = "error"
             video_item.error_message = error_msg[:100]
             detailed_traceback = traceback.format_exc()
-            
+            # Show detailed error to user
+            self.app.root.after(0, lambda: messagebox.showerror(
+                "Unexpected Error",
+                f"{error_msg}\n\n{detailed_traceback}"
+            ))
             # Log detailed error
             self.error_logger.log_download_error(video_item, error_msg, detailed_traceback)
-            
             self.video_list.update_video(video_item.id, status="error")
-            
             # Update batch summary
             self.batch_summary['failed'] += 1
             self.batch_summary['errors'].append({
@@ -2160,10 +2162,3 @@ Powered by yt-dlp"""
                 current.append(video)
             else:
                 break
-
-# Sau khi định nghĩa các lớp và hàm ở trên, thêm phần này ở cuối file
-if __name__ == "__main__":
-    # Khởi tạo và chạy ứng dụng chính
-    root = tk.Tk()
-    app = ModernVideoDownloader(root)
-    root.mainloop()
