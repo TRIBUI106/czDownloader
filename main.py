@@ -1770,6 +1770,8 @@ Powered by yt-dlp"""
                 'outtmpl': os.path.join(self.download_path, '%(title)s.%(ext)s'),
                 'progress_hooks': [progress_hook],
                 'format': self.get_format_selector(video_item.quality),
+                # Auto-fix MPEG-TS in MP4 container or AAC timestamps
+                'fixup': 'normal',  
                 'noplaylist': True,
                 'extract_flat': False,
                 'writeinfojson': False,
