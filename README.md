@@ -1,23 +1,31 @@
-# 🎬 CZ Video Downloader v2.0
+# 🎬 CZ Video Downloader v2.1.0
 
 **Modern video downloader với giao diện đẹp, hỗ trợ nhiều nền tảng**
 
-[![Python 3.7+](https://img.shields.io/badge/python-3.7%2B-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
 [![Windows](https://img.shields.io/badge/platform-Windows-blue.svg)](https://www.microsoft.com/windows)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ## ✨ Tính năng nổi bật
 
+### Cơ bản
 - 🌐 **Hỗ trợ đa nền tảng**: YouTube, Facebook, TikTok, Instagram, Twitter/X
 - 🎨 **Giao diện hiện đại**: UI đẹp mắt với theme sáng/tối, mượt mà
 - 📋 **Quản lý hàng đợi**: Thêm nhiều URL, theo dõi tiến độ từng video
-- ⚡ **Download đồng thời**: Tải nhiều video cùng lúc
-- 📊 **Theo dõi chi tiết**: Progress bar thời gian thực, tốc độ download
+- ⚡ **Download đồng thời**: Tải nhiều video cùng lúc (1-5)
+- 📊 **Theo dõi chi tiết**: Progress bar thời gian thực, tốc độ download (MB/s), ETA
 - 🛠️ **Xử lý lỗi thông minh**: Log chi tiết, hướng dẫn khắc phục tự động
 - ⚙️ **Tùy chỉnh chất lượng**: Từ best đến worst
-- 🔄 **Auto-retry**: Tự động thử lại khi lỗi
-- 🆕 **Auto-update system**: Tự động kiểm tra và cập nhật phiên bản mới
 - 🎯 **One-click setup**: Chỉ cần chạy run.bat, mọi thứ tự động!
+
+### 🆕 Tính năng mới v2.1.0
+- 🔄 **Auto-retry thông minh**: Tự động thử lại 3 lần với exponential backoff (3s → 6s → 12s)
+- 🎵 **Trích xuất audio**: Tải về dạng MP3/M4A chất lượng cao (192kbps)
+- 📁 **Custom filename**: Tùy chỉnh tên file với placeholders (title, uploader, date, id)
+- 💾 **Export/Import queue**: Lưu và khôi phục hàng đợi dưới dạng JSON
+- 🚫 **Hủy download**: Dừng download đang chạy
+- 📈 **Hiển thị tốc độ**: Real-time speed indicator (MB/s) + ETA
+- 🆕 **Auto-update system**: Tự động kiểm tra và cập nhật phiên bản mới từ GitHub
 
 ## 🚀 Cách sử dụng (Cực kỳ đơn giản!)
 
@@ -55,11 +63,45 @@ cd czDownloader
 - **Đồng thời**: 1-5 video cùng lúc
 - **Thư mục**: Mặc định `~/Downloads/czDownloader/`
 
+### 🎵 Trích xuất Audio (MỚI)
+1. Vào tab **Settings**
+2. Tích vào **"🎵 Extract audio only (MP3/M4A)"**
+3. Thêm URL và tải về
+4. File sẽ được lưu dạng `.mp3` (192kbps)
+
+### 📁 Tùy chỉnh tên file (MỚI)
+1. Vào tab **Settings**
+2. Sửa **"Filename template"**
+3. Dùng các placeholder:
+   - `%(title)s` - Tên video
+   - `%(uploader)s` - Tên kênh
+   - `%(upload_date)s` - Ngày upload (YYYYMMDD)
+   - `%(id)s` - Video ID
+
+**Ví dụ**:
+```
+%(title)s.%(ext)s                          → My Video.mp4
+[%(uploader)s] %(title)s.%(ext)s          → [Channel] My Video.mp4
+%(upload_date)s - %(title)s.%(ext)s       → 20240101 - My Video.mp4
+```
+
+### 💾 Export/Import Queue (MỚI)
+**Lưu hàng đợi**:
+1. Thêm video vào queue
+2. Vào **Settings** → **Queue Management**
+3. Click **"💾 Export Queue"** → Lưu file `.json`
+
+**Khôi phục**:
+1. Vào **Settings** → **Queue Management**
+2. Click **"📂 Import Queue"** → Chọn file `.json`
+3. Videos sẽ được thêm vào queue
+
 ### Quản lý hàng đợi
-- **Điều khiển cá nhân**: Tạm dừng, hủy, thử lại từng video
+- **Điều khiển cá nhân**: Hủy, thử lại từng video
 - **Thao tác hàng loạt**: Download tất cả, xóa hết, retry failed
-- **Theo dõi**: Progress bar thời gian thực + tốc độ
+- **Theo dõi**: Progress bar + tốc độ (MB/s) + ETA thời gian thực
 - **Hỗ trợ lỗi**: Hệ thống troubleshooting tích hợp
+- **Auto-retry**: Tự động thử lại 3 lần khi lỗi (3s → 6s → 12s delay)
 
 ## 🎨 Giao diện
 

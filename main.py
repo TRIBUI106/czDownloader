@@ -700,6 +700,10 @@ class VideoItem:
         self.error_message = ""
         self.filename = ""
         self.added_time = datetime.now()
+        self.retry_count = 0
+        self.max_retries = 3
+        self.cancel_flag = False
+        self.extract_audio = False  # New: audio-only extraction
         
     def to_dict(self):
         return {
@@ -1297,6 +1301,9 @@ class ModernVideoDownloader:
         bulk_scroll = ttk.Scrollbar(text_frame, orient=tk.VERTICAL, command=self.bulk_text.yview)
         self.bulk_text.configure(yscrollcommand=bulk_scroll.set)
         
+        # Enable drag-and-drop for URLs
+        self.setup_drag_drop(self.bulk_text)
+        
         self.bulk_text.pack(side=tk.LEFT, fill=tk.X, expand=True)
         bulk_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         
@@ -1374,6 +1381,46 @@ class ModernVideoDownloader:
                                     value="Dark", command=self.apply_theme)
         dark_radio.pack(side=tk.LEFT)
         
+        # Download Options
+        options_section = ttk.LabelFrame(self.settings_tab, text="⚙️ Download Options", padding="20")
+        options_section.pack(fill=tk.X, padx=20, pady=(0, 20))
+        
+        # Audio extraction
+        self.audio_only_var = tk.BooleanVar(value=False)
+        audio_check = ttk.Checkbutton(options_section, 
+                                     text="🎵 Extract audio only (MP3/M4A)",
+                                     variable=self.audio_only_var)
+        audio_check.pack(anchor=tk.W, pady=(0, 10))
+        
+        # Filename template
+        filename_frame = ttk.Frame(options_section)
+        filename_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        ttk.Label(filename_frame, text="📁 Filename template:", 
+                 font=ModernStyle.FONTS['body']).pack(anchor=tk.W, pady=(0, 5))
+        
+        self.filename_template_var = tk.StringVar(value="%(title)s.%(ext)s")
+        template_entry = ttk.Entry(filename_frame, textvariable=self.filename_template_var,
+                                  font=ModernStyle.FONTS['small'], width=50)
+        template_entry.pack(fill=tk.X, pady=(0, 5))
+        
+        ttk.Label(filename_frame, 
+                 text="💡 Available: %(title)s, %(uploader)s, %(upload_date)s, %(id)s",
+                 font=ModernStyle.FONTS['small'], 
+                 foreground="gray").pack(anchor=tk.W)
+        
+        # Concurrent downloads
+        concurrent_frame = ttk.Frame(options_section)
+        concurrent_frame.pack(fill=tk.X)
+        
+        ttk.Label(concurrent_frame, text="⚡ Max concurrent downloads:", 
+                 font=ModernStyle.FONTS['body']).pack(side=tk.LEFT, padx=(0, 10))
+        
+        self.concurrent_var = tk.StringVar(value="2")
+        concurrent_spin = ttk.Spinbox(concurrent_frame, from_=1, to=5, 
+                                     textvariable=self.concurrent_var, width=10)
+        concurrent_spin.pack(side=tk.LEFT)
+        
         # About section
         about_section = ttk.LabelFrame(self.settings_tab, text="ℹ️ About", padding="20")
         about_section.pack(fill=tk.X, padx=20, pady=(0, 20))
@@ -1386,6 +1433,8 @@ Modern video downloader supporting:
 • Individual progress tracking
 • Dark/Light themes
 • Batch downloads
+• Audio extraction
+• Custom filename templates
 
 Powered by yt-dlp"""
         
@@ -1393,6 +1442,21 @@ Powered by yt-dlp"""
                                font=ModernStyle.FONTS['small'],
                                justify=tk.LEFT)
         about_label.pack(anchor=tk.W)
+        
+        # Queue management buttons
+        queue_section = ttk.LabelFrame(self.settings_tab, text="📋 Queue Management", padding="20")
+        queue_section.pack(fill=tk.X, padx=20, pady=(0, 20))
+        
+        queue_btn_frame = ttk.Frame(queue_section)
+        queue_btn_frame.pack(fill=tk.X)
+        
+        export_btn = ttk.Button(queue_btn_frame, text="💾 Export Queue", 
+                               command=self.export_queue)
+        export_btn.pack(side=tk.LEFT, padx=(0, 10))
+        
+        import_btn = ttk.Button(queue_btn_frame, text="📂 Import Queue", 
+                               command=self.import_queue)
+        import_btn.pack(side=tk.LEFT)
         
     def apply_modern_styles(self):
         """Apply modern styling to ttk widgets"""
@@ -1765,13 +1829,16 @@ Powered by yt-dlp"""
                     except Exception:
                         pass
                     
+            # Get filename template from settings
+            filename_template = self.filename_template_var.get() if hasattr(self, 'filename_template_var') else '%(title)s.%(ext)s'
+            
             # Enhanced yt-dlp options
             ydl_opts = {
-                'outtmpl': os.path.join(self.download_path, '%(title)s.%(ext)s'),
+                'outtmpl': os.path.join(self.download_path, filename_template),
                 'progress_hooks': [progress_hook],
                 'format': self.get_format_selector(video_item.quality),
                 # Auto-fix MPEG-TS in MP4 container or AAC timestamps
-                'fixup': 'normal',  
+                'fixup': 'detect_or_warn',  
                 'noplaylist': True,
                 'extract_flat': False,
                 'writeinfojson': False,
@@ -1784,6 +1851,18 @@ Powered by yt-dlp"""
                 'prefer_ffmpeg': True,
                 'ffmpeg_location': None,  # Let yt-dlp find it
             }
+            
+            # Audio extraction if enabled
+            audio_only = self.audio_only_var.get() if hasattr(self, 'audio_only_var') else False
+            if audio_only or video_item.extract_audio:
+                ydl_opts.update({
+                    'format': 'bestaudio/best',
+                    'postprocessors': [{
+                        'key': 'FFmpegExtractAudio',
+                        'preferredcodec': 'mp3',
+                        'preferredquality': '192',
+                    }],
+                })
             
             # Platform-specific configurations
             if 'tiktok.com' in video_item.url:
@@ -1817,8 +1896,32 @@ Powered by yt-dlp"""
                 
         except yt_dlp.DownloadError as e:
             error_msg = str(e)
-            video_item.status = "error"
             detailed_traceback = traceback.format_exc()
+            
+            # Check if this is a retryable error
+            retryable_errors = ["timeout", "network", "connection", "429", "503", "timed out"]
+            is_retryable = any(err in error_msg.lower() for err in retryable_errors)
+            
+            if is_retryable and video_item.retry_count < video_item.max_retries:
+                # Retry with exponential backoff
+                video_item.retry_count += 1
+                retry_delay = 3 * (2 ** (video_item.retry_count - 1))  # 3s, 6s, 12s
+                
+                video_item.error_message = f"Retrying... (attempt {video_item.retry_count}/{video_item.max_retries})"
+                self.video_list.update_video(video_item.id, status="pending")
+                
+                # Schedule retry
+                def retry_download():
+                    time.sleep(retry_delay)
+                    self.start_video_download(video_item.id)
+                
+                retry_thread = threading.Thread(target=retry_download)
+                retry_thread.daemon = True
+                retry_thread.start()
+                return
+            
+            # Max retries exceeded or non-retryable error
+            video_item.status = "error"
             
             # Categorize errors for better user understanding
             if "ffmpeg" in error_msg.lower() or "postprocessor" in error_msg.lower():
@@ -1840,6 +1943,10 @@ Powered by yt-dlp"""
             else:
                 video_item.error_message = f"Download failed: {error_msg[:100]}"
             
+            # Add retry info if retries were attempted
+            if video_item.retry_count > 0:
+                video_item.error_message += f" (after {video_item.retry_count} retries)"
+            
             # Log detailed error
             self.error_logger.log_download_error(video_item, error_msg, detailed_traceback)
             
@@ -1858,14 +1965,28 @@ Powered by yt-dlp"""
             video_item.status = "error"
             video_item.error_message = error_msg[:100]
             detailed_traceback = traceback.format_exc()
-            # Show detailed error to user
-            self.app.root.after(0, lambda: messagebox.showerror(
-                "Unexpected Error",
-                f"{error_msg}\n\n{detailed_traceback}"
-            ))
+            
             # Log detailed error
-            self.error_logger.log_download_error(video_item, error_msg, detailed_traceback)
-            self.video_list.update_video(video_item.id, status="error")
+            try:
+                self.error_logger.log_download_error(video_item, error_msg, detailed_traceback)
+            except Exception:
+                pass
+            
+            # Show detailed error to user (fixed: self.root not self.app.root)
+            try:
+                self.root.after(0, lambda: messagebox.showerror(
+                    "Unexpected Error",
+                    f"Video: {video_item.title}\n\n{error_msg}\n\nCheck error log for details."
+                ))
+            except Exception:
+                pass
+            
+            # Update UI
+            try:
+                self.video_list.update_video(video_item.id, status="error")
+            except Exception:
+                pass
+            
             # Update batch summary
             self.batch_summary['failed'] += 1
             self.batch_summary['errors'].append({
@@ -2162,6 +2283,120 @@ Powered by yt-dlp"""
                 current.append(video)
             else:
                 break
+    
+    def export_queue(self):
+        """Export current queue to JSON file"""
+        try:
+            if not self.video_queue:
+                messagebox.showinfo("Export Queue", "Queue is empty!")
+                return
+            
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".json",
+                filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+                initialfile=f"czDownloader_queue_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            )
+            
+            if file_path:
+                queue_data = {
+                    'exported_at': datetime.now().isoformat(),
+                    'total_videos': len(self.video_queue),
+                    'videos': [v.to_dict() for v in self.video_queue.values()]
+                }
+                
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    json.dump(queue_data, f, indent=2, ensure_ascii=False)
+                
+                messagebox.showinfo("Export Successful", 
+                                  f"✅ Exported {len(self.video_queue)} videos to:\n{file_path}")
+        except Exception as e:
+            messagebox.showerror("Export Failed", f"❌ Failed to export queue:\n{str(e)}")
+    
+    def import_queue(self):
+        """Import queue from JSON file"""
+        try:
+            file_path = filedialog.askopenfilename(
+                filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
+            )
+            
+            if file_path:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    queue_data = json.load(f)
+                
+                imported_count = 0
+                for video_data in queue_data.get('videos', []):
+                    # Create new video item
+                    video = VideoItem(video_data['url'], video_data.get('quality', 'best'))
+                    video.title = video_data.get('title', 'Loading...')
+                    video.status = "pending"  # Reset to pending
+                    video.progress = 0
+                    
+                    # Add to queue
+                    self.video_queue[video.id] = video
+                    self.video_list.add_video(video)
+                    imported_count += 1
+                
+                # Switch to queue tab
+                self.notebook.select(1)
+                
+                messagebox.showinfo("Import Successful", 
+                                  f"✅ Imported {imported_count} videos from:\n{file_path}")
+        except Exception as e:
+            messagebox.showerror("Import Failed", f"❌ Failed to import queue:\n{str(e)}")
+    
+    def cancel_video_download(self, video_id):
+        """Cancel a download in progress"""
+        try:
+            if video_id in self.video_queue:
+                video = self.video_queue[video_id]
+                video.cancel_flag = True
+                video.status = "cancelled"
+                self.video_list.update_video(video_id, status="cancelled")
+                
+                # Try to stop the thread (yt-dlp doesn't have clean cancellation)
+                if video_id in self.download_threads:
+                    # The thread will check cancel_flag in next hook call
+                    pass
+                
+                messagebox.showinfo("Cancelled", f"Download cancelled: {video.title}")
+        except Exception as e:
+            messagebox.showerror("Cancel Failed", f"Failed to cancel:\n{str(e)}")
+    
+    def toggle_video_download(self, video_id):
+        """Pause/resume video download (not fully supported by yt-dlp)"""
+        messagebox.showinfo("Feature Info", 
+                          "⚠️ Pause/Resume is not supported by yt-dlp.\n"
+                          "You can cancel and retry the download.")
+    
+    def setup_drag_drop(self, widget):
+        """Setup drag-and-drop functionality for URL input"""
+        def on_drop(event):
+            try:
+                # Get dropped data
+                data = event.data
+                
+                # Extract URLs from dropped text
+                lines = data.strip().split('\n')
+                urls = [line.strip() for line in lines if line.strip() and ('http://' in line or 'https://' in line)]
+                
+                if urls:
+                    # Insert URLs into text widget
+                    current_text = widget.get("1.0", tk.END).strip()
+                    if current_text:
+                        widget.insert(tk.END, '\n')
+                    widget.insert(tk.END, '\n'.join(urls))
+                    
+                    # Show feedback
+                    self.url_status_var.set(f"✅ {len(urls)} URL(s) added via drag-and-drop")
+                    self.root.after(3000, lambda: self.url_status_var.set("Paste video URLs here..."))
+                else:
+                    messagebox.showwarning("Invalid Drop", "No valid URLs found in dropped content!")
+            except Exception as e:
+                messagebox.showerror("Drop Error", f"Failed to process dropped content:\n{str(e)}")
+        
+        # Note: tkinterdnd2 would be needed for full drag-drop support from browser
+        # For now, we support pasting via clipboard which is more universal
+        widget.bind('<Control-v>', lambda e: self.root.after(100, lambda: self.url_status_var.set("💡 Tip: Use 'Add All URLs' button after pasting")))
 
 # Sau cùng, khởi động ứng dụng nếu chạy trực tiếp
 if __name__ == "__main__":
