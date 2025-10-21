@@ -2162,3 +2162,9 @@ Powered by yt-dlp"""
                 current.append(video)
             else:
                 break
+
+# Sau cùng, khởi động ứng dụng nếu chạy trực tiếp
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = ModernVideoDownloader(root)
+    root.mainloop()
