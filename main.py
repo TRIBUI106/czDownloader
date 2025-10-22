@@ -1850,6 +1850,9 @@ Powered by yt-dlp"""
                 # FFmpeg options
                 'prefer_ffmpeg': True,
                 'ffmpeg_location': None,  # Let yt-dlp find it
+                # 🔥 Filename options - Keep full title, only replace truly invalid chars
+                'restrictfilenames': False,  # Keep Unicode and special chars like : # ?
+                'windowsfilenames': False,   # Don't auto-sanitize, we'll do custom replacement
             }
             
             # Audio extraction if enabled
@@ -1891,6 +1894,77 @@ Powered by yt-dlp"""
                     ydl_opts['external_downloader_args'] = ['-x', '16', '-k', '1M']
             except Exception:
                 pass
+            
+            # 🔥 Custom postprocessor hook to handle Windows filename restrictions
+            class CustomFilenameHook:
+                """Hook to sanitize ONLY truly invalid Windows chars while keeping full title"""
+                
+                @staticmethod
+                def sanitize_windows_filename(filename):
+                    """Replace ONLY chars that Windows doesn't allow in filenames"""
+                    import re
+                    
+                    # Windows forbidden chars and their safe replacements
+                    replacements = {
+                        '<': '＜',   # Fullwidth less-than
+                        '>': '＞',   # Fullwidth greater-than
+                        ':': '：',   # Fullwidth colon (keep : spirit)
+                        '"': '＂',   # Fullwidth quotation mark
+                        '/': '／',   # Fullwidth solidus
+                        '\\': '＼',  # Fullwidth reverse solidus
+                        '|': '｜',   # Fullwidth vertical line
+                        '?': '？',   # Fullwidth question mark (keep ? spirit)
+                        '*': '＊',   # Fullwidth asterisk
+                    }
+                    
+                    # Replace forbidden chars with visually similar safe chars
+                    for forbidden, safe in replacements.items():
+                        filename = filename.replace(forbidden, safe)
+                    
+                    # Remove leading/trailing spaces and dots (Windows restriction)
+                    filename = filename.strip(' .')
+                    
+                    # Keep everything else including: # @ $ % ^ & ( ) - _ + = [ ] { } ; ' , . ~ `
+                    return filename
+                
+                def __call__(self, info):
+                    """Called after file is downloaded"""
+                    try:
+                        if 'filepath' in info and os.path.exists(info['filepath']):
+                            original_path = info['filepath']
+                            directory = os.path.dirname(original_path)
+                            filename = os.path.basename(original_path)
+                            
+                            # Sanitize filename
+                            safe_filename = self.sanitize_windows_filename(filename)
+                            
+                            if safe_filename != filename:
+                                new_path = os.path.join(directory, safe_filename)
+                                
+                                # Rename file
+                                try:
+                                    if os.path.exists(new_path):
+                                        # If target exists, add timestamp
+                                        name, ext = os.path.splitext(safe_filename)
+                                        timestamp = datetime.now().strftime('%H%M%S')
+                                        safe_filename = f"{name}_{timestamp}{ext}"
+                                        new_path = os.path.join(directory, safe_filename)
+                                    
+                                    os.rename(original_path, new_path)
+                                    info['filepath'] = new_path
+                                    print(f"\n✅ Filename sanitized (Windows-safe):")
+                                    print(f"   {filename}")
+                                    print(f"   → {safe_filename}\n")
+                                except Exception as e:
+                                    print(f"⚠️ Could not rename file: {e}")
+                    except Exception as e:
+                        print(f"⚠️ Filename hook error: {e}")
+                    
+                    return [], info  # Return empty postprocessor list and modified info
+            
+            # Add custom filename hook
+            ydl_opts['postprocessor_hooks'] = [CustomFilenameHook()]
+            
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([video_item.url])
                 
