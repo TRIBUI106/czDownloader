@@ -818,12 +818,14 @@ class VideoListFrame(ttk.Frame):
         info_frame = tk.Frame(top_row, bg=colors['bg_card'])
         info_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
         
-        # Title
+        # Title - allow full length with wrapping
         title_label = tk.Label(info_frame, text=video_item.title, 
                               font=ModernStyle.FONTS['subheading'],
                               fg=colors['text_primary'],
                               bg=colors['bg_card'],
-                              anchor="w")
+                              anchor="w",
+                              wraplength=600,  # Allow wrapping instead of truncating
+                              justify="left")
         title_label.pack(anchor=tk.W, fill=tk.X)
         
         # URL and details
@@ -1689,13 +1691,14 @@ Powered by yt-dlp"""
                 try:
                     info = ydl.extract_info(video_item.url, download=False)
                     
-                    video_item.title = info.get('title', 'Unknown')[:80]
+                    # 🔥 Keep FULL title - no truncation!
+                    video_item.title = info.get('title', 'Unknown')
                     video_item.duration = info.get('duration', 0)
                     video_item.uploader = info.get('uploader', 'Unknown')
                     video_item.thumbnail_url = info.get('thumbnail', '')
                     video_item.status = "pending"
                     
-                    # Update UI
+                    # Update UI with full title
                     self.video_list.update_video(video_item.id, 
                                                title=video_item.title,
                                                status="pending")
